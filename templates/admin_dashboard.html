@@ -1,0 +1,634 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Milestone Administrative Control | NEXO{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 py-24 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- DASHBOARD HEADER                                       -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <div class="glass p-8 md:p-10 rounded-3xl border-slate-800 mb-8">
+            <div class="flex items-center space-x-3 mb-3">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-pulse"></span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Administrative Portal</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight font-serif">
+                Milestone <span class="dynamic-color-shift">Approvals Portal</span>
+            </h1>
+            <p class="text-slate-400 text-sm mt-2 leading-relaxed max-w-xl">
+                Manage your client onboarding pipeline. Approve pending milestones to automatically update user workspaces and unlock analytics.
+            </p>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- MESSAGES NOTIFICATION BAR                              -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        {% if messages %}
+            <div class="mb-6 space-y-2">
+                {% for message in messages %}
+                    <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold flex items-center">
+                        <i class="fas fa-check-circle mr-2 text-sm"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- SERVICE PERFORMANCE ANALYTICS                          -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <div class="glass p-8 rounded-3xl border-slate-800 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h3 class="text-white text-base font-black tracking-tight flex items-center gap-2">
+                        <i class="fas fa-chart-line text-[#D4AF37]"></i> Service Performance Analytics
+                    </h3>
+                    <p class="text-slate-500 text-[10px] uppercase tracking-widest font-bold mt-0.5">Historical logs</p>
+                </div>
+                <!-- Filters -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <select id="admin-analytics-service" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#D4AF37]">
+                        <option value="">All Services</option>
+                        <option value="Web Development">Web Development</option>
+                        <option value="Writing & Editorial">Writing & Editorial</option>
+                        <option value="Graphic & Print Design">Graphic & Print Design</option>
+                    </select>
+                    <select id="admin-analytics-period" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#D4AF37]">
+                        <option value="">All Periods</option>
+                        <option value="week">Week</option>
+                        <option value="month">Month</option>
+                        <option value="year">Year</option>
+                    </select>
+                    <div class="flex items-center gap-2">
+                        <input type="date" id="admin-analytics-start" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#D4AF37]">
+                        <input type="date" id="admin-analytics-end" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#D4AF37]">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty Prompt State -->
+            <div id="admin-performance-empty" class="hidden py-12 text-center">
+                <p class="text-slate-500 text-xs italic">No changes recorded for this period.</p>
+            </div>
+
+            <!-- Chart -->
+            <div class="relative h-64 mb-6" id="admin-performance-canvas-wrapper">
+                <canvas id="admin-performance-chart"></canvas>
+            </div>
+            
+            <!-- Explanation Panel -->
+            <div id="admin-explanation-panel" class="p-4 bg-slate-900/60 border border-slate-850 rounded-2xl hidden">
+                <h5 class="text-[10px] font-black uppercase text-[#D4AF37] tracking-widest mb-1 flex items-center gap-1.5">
+                    <i class="fas fa-info-circle"></i> Data Point Explanation
+                </h5>
+                <p id="admin-explanation-text" class="text-xs text-slate-300 leading-relaxed"></p>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- PROFILES LIST                                          -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <div class="space-y-6">
+            {% if profiles %}
+                {% for profile in profiles %}
+                    <div class="glass p-6 rounded-3xl border-slate-800 hover:border-slate-700/80 transition-all duration-300">
+                        <!-- Profile Header -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-800/60 gap-4 mb-6">
+                            <div>
+                                <h3 class="text-white text-lg font-bold flex items-center gap-2">
+                                    <i class="fas fa-user-circle text-slate-400 text-xl"></i>
+                                    {{ profile.user.username }}
+                                </h3>
+                                <p class="text-slate-500 text-xs mt-0.5">{{ profile.user.email|default:"No email registered" }} • Registered: {{ profile.user.date_joined|date:"M d, Y" }}</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                <span class="px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-[9px] font-black uppercase tracking-widest">
+                                    Tier: {{ profile.chosen_tier|default:"None Selected" }}
+                                </span>
+                                <span class="px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest">
+                                    Progress: {{ profile.onboarding_progress_percentage }}%
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Roadmap Stages Grid -->
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {% for milestone in profile.milestones_list %}
+                                <div class="p-4 bg-slate-900/40 rounded-2xl border border-slate-850 flex flex-col justify-between min-h-[120px]">
+                                    <div>
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-[9px] font-black uppercase text-slate-500 tracking-wider">Step {{ milestone.step_number }}: {{ milestone.name }}</span>
+                                            {% if milestone.status == 'APPROVED' %}
+                                                <span class="text-emerald-400 text-[10px] font-bold"><i class="fas fa-check-circle"></i> Approved</span>
+                                            {% else %}
+                                                <span class="text-yellow-400 text-[10px] font-bold"><i class="fas fa-clock"></i> Pending</span>
+                                            {% endif %}
+                                        </div>
+                                        <h4 class="text-white text-xs font-bold">{{ milestone.name }}</h4>
+                                    </div>
+                                    {% if milestone.status != 'APPROVED' %}
+                                        <div class="mt-4 pt-3 border-t border-slate-800/40">
+                                            <form method="POST" action="">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                                                <input type="hidden" name="milestone_field" value="{{ milestone.id }}">
+                                                <button type="submit" class="w-full text-center py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black uppercase tracking-wider rounded-xl transition duration-300">
+                                                    Approve Step
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Service Specific Graphs Container -->
+                        <div class="mt-6 pt-6 border-t border-slate-800/40">
+                            <h4 class="text-white text-xs font-black uppercase tracking-widest mb-4 flex items-center justify-between">
+                                <span class="flex items-center gap-2">
+                                    <i class="fas fa-chart-line text-[#D4AF37]"></i> Service Specific Performance Analytics
+                                </span>
+                                <span class="text-slate-500 text-[9px] lowercase italic font-normal">Click graph to add metric point</span>
+                            </h4>
+                            <div id="service-specific-charts-container-{{ profile.id }}" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 service-charts-wrapper" data-profile-id="{{ profile.id }}" data-client-username="{{ profile.user.username }}">
+                                <!-- Dynamically populated via JS -->
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="glass p-12 rounded-3xl border-slate-800 text-center">
+                    <i class="fas fa-users text-slate-700 text-3xl mb-4"></i>
+                    <h3 class="text-white font-bold text-base mb-1">No Client Profiles Found</h3>
+                    <p class="text-slate-500 text-xs">Registered client profiles will appear here once users join.</p>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+<script>
+(function () {
+    const goldColor = '#D4AF37';
+    const goldFaded = 'rgba(212,175,55,0.12)';
+    
+    // Memoizing Chart Manager class to avoid memory leaks
+    class ChartManager {
+        constructor() {
+            this.charts = {};
+        }
+
+        getOrCreateChart(canvasId, type, data, options) {
+            if (this.charts[canvasId]) {
+                const chart = this.charts[canvasId];
+                chart.data.labels = data.labels;
+                chart.data.datasets = data.datasets;
+                chart.update();
+                return chart;
+            }
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return null;
+            const ctx = canvas.getContext('2d');
+            const chart = new Chart(ctx, { type, data, options });
+            this.charts[canvasId] = chart;
+            return chart;
+        }
+
+        destroyChart(canvasId) {
+            if (this.charts[canvasId]) {
+                this.charts[canvasId].destroy();
+                delete this.charts[canvasId];
+            }
+        }
+    }
+
+    const chartManager = new ChartManager();
+    let currentAdminDataList = [];
+
+    const serviceConfigs = {
+        'Web Development': { metric: 'Code Commits', inputType: 'number', label: 'Commits Count' },
+        'Video Editing': { metric: 'Videos Produced', inputType: 'number', label: 'Number of Videos' },
+        'Content Writing': { metric: 'Words Written', inputType: 'number', label: 'Word Count' },
+        'Graphic & Print Design': { metric: 'Designs Completed', inputType: 'number', label: 'Designs Count' },
+        'SEO Optimization': { metric: 'Search Rank', inputType: 'number', label: 'Average Rank Position' }
+    };
+
+    // Debouncing utility
+    function debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    window.openAddMetricModal = function(clientUsername, serviceName) {
+        const modal = document.getElementById('admin-add-metric-modal');
+        if (!modal) return;
+
+        document.getElementById('modal-field-client').value = clientUsername;
+        document.getElementById('modal-field-service').value = serviceName;
+
+        const config = serviceConfigs[serviceName] || { metric: 'Value', inputType: 'number', label: 'Value' };
+        document.getElementById('modal-field-metric').value = config.metric;
+        document.getElementById('modal-metric-label').textContent = config.label;
+
+        document.getElementById('modal-input-container').innerHTML = `
+            <input type="${config.inputType}" id="modal-field-value" name="metric_value" step="any" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#D4AF37]" placeholder="Enter ${config.label.toLowerCase()}...">
+        `;
+
+        document.getElementById('modal-field-explanation').value = '';
+        
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('modal-field-date').value = today;
+
+        modal.classList.remove('hidden');
+    };
+
+    async function loadAdminServiceAnalytics() {
+        const serviceName = document.getElementById('admin-analytics-service').value;
+        const periodType = document.getElementById('admin-analytics-period').value;
+        const startDate = document.getElementById('admin-analytics-start').value;
+        const endDate = document.getElementById('admin-analytics-end').value;
+
+        const params = new URLSearchParams();
+        if (serviceName) params.append('service_name', serviceName);
+        if (periodType) params.append('period_type', periodType);
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+
+        try {
+            const resp = await fetch(`/api/service-analytics/?${params.toString()}`);
+            const res = await resp.json();
+
+            const emptyEl = document.getElementById('admin-performance-empty');
+            const wrapperEl = document.getElementById('admin-performance-canvas-wrapper');
+            const explanationPanel = document.getElementById('admin-explanation-panel');
+
+            if (res.status === 'no_change' || !res.data || Object.keys(res.data).length === 0) {
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                if (wrapperEl) wrapperEl.classList.add('hidden');
+                if (explanationPanel) explanationPanel.classList.add('hidden');
+                currentAdminDataList = [];
+                return;
+            }
+
+            if (emptyEl) emptyEl.classList.add('hidden');
+            if (wrapperEl) wrapperEl.classList.remove('hidden');
+
+            // Flatten O(1) Hash Map dictionary into points list for display
+            let pointsList = [];
+            Object.keys(res.data).forEach(sName => {
+                const svc = res.data[sName];
+                svc.points.forEach(pt => {
+                    pointsList.push({
+                        ...pt,
+                        service_name: sName,
+                        metric_name: svc.metric_name
+                    });
+                });
+            });
+
+            const sortedData = pointsList.sort((a, b) => new Date(a.date) - new Date(b.date));
+            currentAdminDataList = sortedData;
+
+            const labels = sortedData.map(d => d.date);
+            const values = sortedData.map(d => d.metric_value);
+
+            chartManager.getOrCreateChart('admin-performance-chart', 'line', {
+                labels: labels,
+                datasets: [{
+                    label: 'Performance Metric',
+                    data: values,
+                    borderColor: goldColor,
+                    backgroundColor: goldFaded,
+                    borderWidth: 2,
+                    pointBackgroundColor: goldColor,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: true,
+                    tension: 0.3
+                }]
+            }, {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        borderColor: goldColor,
+                        borderWidth: 1,
+                        titleColor: goldColor,
+                        bodyColor: '#94a3b8'
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
+                    y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' }, beginAtZero: true }
+                },
+                onClick: (evt, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const firstPoint = activeElements[0];
+                        const idx = firstPoint.index;
+                        const item = currentAdminDataList[idx];
+                        if (item && item.explanation && explanationPanel) {
+                            explanationPanel.classList.remove('hidden');
+                            document.getElementById('admin-explanation-text').textContent = item.explanation;
+                        }
+                    }
+                }
+            });
+
+            if (sortedData.length > 0 && sortedData[0].explanation && explanationPanel) {
+                explanationPanel.classList.remove('hidden');
+                document.getElementById('admin-explanation-text').textContent = sortedData[0].explanation;
+            }
+
+        } catch (err) {
+            console.error('Failed to load admin service analytics:', err);
+        }
+    }
+
+    // Client cache to implement delta fetching
+    const clientHistoryCache = {};
+    const clientHistoryLastFetch = {};
+
+    async function updateServiceCharts(profileId, servicesProgress) {
+        const container = document.getElementById(`service-specific-charts-container-${profileId}`);
+        if (!container) return;
+
+        const clientUsername = container.getAttribute('data-client-username');
+        const lastFetch = clientHistoryLastFetch[clientUsername] || '';
+
+        // Delta Fetching using O(1) local cache update
+        try {
+            const url = lastFetch 
+                ? `/api/service-analytics/?client_username=${clientUsername}&since=${lastFetch}`
+                : `/api/service-analytics/?client_username=${clientUsername}`;
+            
+            const resp = await fetch(url);
+            const res = await resp.json();
+            
+            if (res.status === 'success' && res.data) {
+                if (!clientHistoryCache[clientUsername]) {
+                    clientHistoryCache[clientUsername] = {};
+                }
+                
+                // Merge delta changes
+                Object.keys(res.data).forEach(sName => {
+                    if (!clientHistoryCache[clientUsername][sName]) {
+                        clientHistoryCache[clientUsername][sName] = {
+                            metric_name: res.data[sName].metric_name,
+                            points: []
+                        };
+                    }
+                    const cache = clientHistoryCache[clientUsername][sName];
+                    const existingIds = new Set(cache.points.map(p => p.id));
+                    res.data[sName].points.forEach(pt => {
+                        if (!existingIds.has(pt.id)) {
+                            cache.points.push(pt);
+                        }
+                    });
+                });
+                
+                clientHistoryLastFetch[clientUsername] = new Date().toISOString().split('T')[0];
+            }
+        } catch (e) {
+            console.error('Could not fetch client performance metrics delta:', e);
+        }
+
+        const clientData = clientHistoryCache[clientUsername] || {};
+
+        // Target-based DOM updates: only write HTML shell if cards count mismatch
+        const currentCards = container.querySelectorAll('.service-chart-card');
+        if (currentCards.length !== servicesProgress.length) {
+            container.innerHTML = servicesProgress.map(s => {
+                const safeCategory = s.category.replace(/[^a-zA-Z0-9]/g, '_');
+                const svcInfo = clientData[s.category] || { points: [] };
+                const latestPointText = svcInfo.points.length > 0
+                    ? `Latest: ${svcInfo.points[0].metric_value} ${svcInfo.metric_name}`
+                    : 'No metric logs yet';
+
+                return `
+                    <div class="service-chart-card p-4 bg-slate-900/60 border border-slate-800 hover:border-[#D4AF37]/50 rounded-2xl flex flex-col justify-between gap-4 cursor-pointer" onclick="openAddMetricModal('${clientUsername}', '${s.category}')">
+                        <div class="min-w-0 flex items-center justify-between">
+                            <div>
+                                <h5 class="text-xs font-bold text-white truncate">${s.category}</h5>
+                                <p class="text-[9px] uppercase tracking-wider text-slate-500 font-bold mt-0.5">${s.count} Allocations</p>
+                            </div>
+                            <div class="w-6 h-6 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
+                                <i class="fas fa-plus text-[#D4AF37] text-[8px]"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="relative w-full h-24 mt-2">
+                            <canvas id="chart-service-${profileId}-${safeCategory}"></canvas>
+                            ${svcInfo.points.length === 0 ? `
+                            <div class="absolute inset-0 flex items-center justify-center bg-slate-950/20 backdrop-blur-[1px] rounded-lg">
+                                <span class="text-[8px] uppercase tracking-wider text-slate-400 font-bold text-center">Add metric point</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <p class="latest-val-label text-[10px] text-emerald-400 font-black mt-2">${latestPointText}</p>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            // Update labels dynamically
+            servicesProgress.forEach((s, idx) => {
+                const svcInfo = clientData[s.category] || { points: [] };
+                const labelEl = currentCards[idx].querySelector('.latest-val-label');
+                if (labelEl) {
+                    labelEl.textContent = svcInfo.points.length > 0
+                        ? `Latest: ${svcInfo.points[0].metric_value} ${svcInfo.metric_name}`
+                        : 'No metric logs yet';
+                }
+            });
+        }
+
+        // Initialize/Update line charts via ChartManager O(1) memoization
+        servicesProgress.forEach(s => {
+            const safeCategory = s.category.replace(/[^a-zA-Z0-9]/g, '_');
+            const canvasId = `chart-service-${profileId}-${safeCategory}`;
+            const svcInfo = clientData[s.category] || { points: [] };
+            const servicePoints = [...svcInfo.points].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const labels = servicePoints.map(p => p.date);
+            const values = servicePoints.map(p => p.metric_value);
+            const metricName = servicePoints.length > 0 ? servicePoints[0].metric_name : 'Value';
+
+            chartManager.getOrCreateChart(canvasId, 'line', {
+                labels: labels.length > 0 ? labels : ['Pending'],
+                datasets: [{
+                    label: metricName,
+                    data: values.length > 0 ? values : [0],
+                    borderColor: goldColor,
+                    backgroundColor: goldFaded,
+                    borderWidth: 1.5,
+                    pointBackgroundColor: goldColor,
+                    pointRadius: values.length > 0 ? 3 : 0,
+                    fill: true,
+                    tension: 0.2
+                }]
+            }, {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        borderColor: goldColor,
+                        borderWidth: 0.5,
+                        titleColor: goldColor,
+                        bodyColor: '#94a3b8'
+                    }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                }
+            });
+        });
+    }
+
+    async function pollProfileStatus(profileId) {
+        try {
+            const resp = await fetch(`/api/clients/${profileId}/milestones-status/`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!resp.ok) throw new Error('API Error');
+            const data = await resp.json();
+
+            updateServiceCharts(profileId, data.services_progress);
+
+        } catch (err) {
+            console.error(`Status check failed for profile ${profileId}:`, err);
+        }
+    }
+
+    const debouncedLoadAdminAnalytics = debounce(loadAdminServiceAnalytics, 250);
+
+    function startPolling() {
+        const wrappers = document.querySelectorAll('.service-charts-wrapper');
+        wrappers.forEach(w => {
+            const profileId = w.getAttribute('data-profile-id');
+            if (profileId) {
+                pollProfileStatus(profileId);
+                setInterval(() => pollProfileStatus(profileId), 5000);
+            }
+        });
+
+        loadAdminServiceAnalytics();
+        document.getElementById('admin-analytics-service').addEventListener('change', debouncedLoadAdminAnalytics);
+        document.getElementById('admin-analytics-period').addEventListener('change', debouncedLoadAdminAnalytics);
+        document.getElementById('admin-analytics-start').addEventListener('change', debouncedLoadAdminAnalytics);
+        document.getElementById('admin-analytics-end').addEventListener('change', debouncedLoadAdminAnalytics);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startPolling);
+    } else {
+        startPolling();
+    }
+
+    // Modal save submission
+    const metricForm = document.getElementById('admin-add-metric-form');
+    if (metricForm) {
+        metricForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const clientUsername = document.getElementById('modal-field-client').value;
+            const serviceName = document.getElementById('modal-field-service').value;
+            const metricName = document.getElementById('modal-field-metric').value;
+            const metricValue = document.getElementById('modal-field-value').value;
+            const explanation = document.getElementById('modal-field-explanation').value;
+            const date = document.getElementById('modal-field-date').value;
+
+            try {
+                const resp = await fetch('/api/service-analytics/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        client_username: clientUsername,
+                        service_name: serviceName,
+                        metric_name: metricName,
+                        metric_value: metricValue,
+                        explanation: explanation,
+                        date: date
+                    })
+                });
+
+                const res = await resp.json();
+                if (res.status === 'success') {
+                    document.getElementById('admin-add-metric-modal').classList.add('hidden');
+                    
+                    // Clear cache for this client to force reload latest deltas
+                    delete clientHistoryLastFetch[clientUsername];
+                    
+                    const wrappers = document.querySelectorAll('.service-charts-wrapper');
+                    wrappers.forEach(w => {
+                        const pId = w.getAttribute('data-profile-id');
+                        const username = w.getAttribute('data-client-username');
+                        if (username === clientUsername && pId) {
+                            pollProfileStatus(pId);
+                        }
+                    });
+                    loadAdminServiceAnalytics();
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            } catch (err) {
+                console.error('Save failed:', err);
+            }
+        });
+    }
+})();
+</script>
+
+<!-- Admin Add Metric Modal -->
+<div id="admin-add-metric-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm" onclick="document.getElementById('admin-add-metric-modal').classList.add('hidden')"></div>
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-md w-full relative z-10 mx-4 shadow-2xl">
+        <h4 class="text-white text-base font-black tracking-tight mb-4 flex items-center gap-2">
+            <i class="fas fa-plus-circle text-[#D4AF37]"></i> Add Analytics Metric
+        </h4>
+        <form id="admin-add-metric-form" class="space-y-4">
+            <input type="hidden" id="modal-field-client" name="client_username">
+            <input type="hidden" id="modal-field-service" name="service_name">
+            <input type="hidden" id="modal-field-metric" name="metric_name">
+            
+            <div>
+                <label id="modal-metric-label" class="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Metric Value</label>
+                <div id="modal-input-container">
+                    <!-- Loaded dynamically via JS -->
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Explanation</label>
+                <textarea id="modal-field-explanation" class="w-full h-20 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#D4AF37]" placeholder="Details about this data point..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Date</label>
+                <input type="date" id="modal-field-date" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#D4AF37]">
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-highlight-400 hover:bg-lime-300 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl transition">
+                Save Point
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

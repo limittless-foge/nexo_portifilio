@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Nexo Portfolio{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        accent: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            950: '#172554',
+                        },
+                        highlight: {
+                            400: '#deff9a',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .hero-gradient {
+            background: linear-gradient(to bottom right, #0f172a, #1e3a8a);
+        }
+        /* Drop-in animation for headings/elements */
+        @keyframes dropIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
+        }
+        .drop-in {
+            opacity: 0;
+            transform: translateY(-50px);
+            animation: dropIn 600ms ease-out forwards;
+        }
+
+        /* Combined fall then dance animation */
+        @keyframes dropDance {
+            0%   { transform: translateY(-80px) rotate(-6deg); opacity: 0; }
+            30%  { transform: translateY(0) rotate(0deg); opacity: 1; }
+            45%  { transform: translateY(-6px) rotate(3deg); }
+            60%  { transform: translateY(4px) rotate(-2deg); }
+            80%  { transform: translateY(0) rotate(1deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+        /* Perpetual subtle dance */
+        @keyframes danceOnly {
+            0%   { transform: translateY(0) rotate(0deg); }
+            25%  { transform: translateY(-2px) rotate(-1deg); }
+            50%  { transform: translateY(1px) rotate(1deg); }
+            75%  { transform: translateY(-1px) rotate(-0.5deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        .fall-dance {
+            transform-origin: center;
+            display: inline-block;
+            animation: dropDance 1.5s cubic-bezier(.2,.9,.2,1) infinite;
+        }
+
+        .dance-only {
+            display: inline-block;
+            animation: danceOnly 3.5s ease-in-out infinite;
+        }
+
+        /* Interactive link hover utility */
+        .link-interactive {
+            transition: transform 180ms ease, color 180ms ease, opacity 180ms ease;
+            will-change: transform;
+            display: inline-block;
+        }
+        .link-interactive:hover, .link-interactive:focus {
+            transform: translateY(-4px) scale(1.02);
+            color: #deff9a; /* highlight */
+        }
+
+        /* Letter-by-letter drop and dance */
+        @keyframes letterDropAndDance {
+            0% { opacity: 0; transform: translateY(-60px) rotate(-15deg); }
+            30% { opacity: 1; transform: translateY(0px) rotate(0deg); }
+            40% { transform: translateY(-4px) rotate(2deg); }
+            50% { transform: translateY(2px) rotate(-2deg); }
+            60% { transform: translateY(-4px) rotate(2deg); }
+            70% { transform: translateY(2px) rotate(-2deg); }
+            80% { transform: translateY(-4px) rotate(2deg); }
+            90% { transform: translateY(2px) rotate(-2deg); }
+            100% { transform: translateY(0) rotate(0); opacity: 1; }
+        }
+
+        .animate-letter {
+            display: inline-block;
+            will-change: transform, opacity;
+            animation-name: letterDropAndDance;
+            animation-duration: 1.6s;
+            animation-timing-function: cubic-bezier(.2,.9,.2,1);
+            animation-iteration-count: infinite;
+            animation-fill-mode: both;
+        }
+
+        /* Text gradient shift utility */
+        .dynamic-color-shift {
+            background: linear-gradient(to right, #3b82f6, #14b8a6, #a855f7, #3b82f6);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            animation: textGradientShift 5s linear infinite;
+        }
+        @keyframes textGradientShift {
+            0% { background-position: 0% center; }
+            100% { background-position: 300% center; }
+        }
+
+        /* Typewriter / typing reveal */
+        .typewriter { display: inline-block; overflow: hidden; white-space: nowrap; border-right: 4px solid rgba(226,232,240,0.2); }
+        .animate-typing { width: 0; display: inline-block; animation: typing 3s steps(40,end) forwards, blink 700ms step-end infinite; }
+        @keyframes typing { from { width: 0; } to { width: 100%; } }
+        @keyframes blink { 50% { border-color: transparent; } }
+
+        /* Chevron rotation for sub-service toggle */
+        .sub-chevron {
+            transition: transform 250ms ease;
+        }
+        .rotate-90 {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans">
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 glass border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center space-x-12">
+                    
+                    <span class="text-2xl font-bold text-accent tracking-tighter">NEXO</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'home' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Home</a>
+                            <a href="{% url 'services_page' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Services</a>
+                            <a href="{% url 'experience_page' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Experience</a>
+                            <a href="{% url 'contact' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Message Us</a>
+                            {% if not user.is_staff %}
+                                <a href="{% url 'client_dashboard' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Dashboard</a>
+                            {% endif %}
+                            {% if user.is_staff %}
+                                <!-- Admin Dropdown -->
+                                <div class="relative group" id="adminDropdown">
+                                    <button class="flex items-center space-x-2 text-highlight-400 hover:text-white transition font-black uppercase text-[10px] tracking-widest focus:outline-none" onclick="toggleAdminDropdown()">
+                                        <i class="fas fa-terminal text-xs"></i>
+                                        <span>Admin Command</span>
+                                        <i class="fas fa-chevron-down text-[8px]"></i>
+                                    </button>
+                                    <div id="adminMenu" class="absolute left-0 mt-3 w-48 glass rounded-2xl border-slate-800 shadow-2xl py-2 hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <a href="{% url 'admin_dashboard' %}" class="block px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                            <i class="fas fa-chart-line mr-2"></i> Dashboard
+                                        </a>
+                                        <a href="{% url 'message_dash' %}" class="block px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                            <i class="fas fa-envelope mr-2"></i> See Messages
+                                        </a>
+                                        <a href="{% url 'review_dash' %}" class="block px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                            <i class="fas fa-star mr-2"></i> Rate Review
+                                        </a>
+                                        <div class="border-t border-slate-800 my-1"></div>
+                                        <a href="/admin/" target="_blank" class="block px-4 py-2 text-[10px] font-bold text-slate-500 hover:text-white hover:bg-white/5 transition uppercase tracking-widest">
+                                            <i class="fas fa-shield-alt mr-2"></i> Django Backend
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'home' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Home</a>
+                            <a href="{% url 'services_page' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Services</a>
+                            <a href="{% url 'experience_page' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Experience</a>
+                            <a href="{% url 'contact' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Message Us</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                    {% if user.is_authenticated %}
+                        {% if global_site_setting.phone_number %}
+                            <div class="hidden lg:flex items-center space-x-2 mr-4">
+                                <i class="fas fa-phone-alt text-accent text-xs"></i>
+                                <span class="text-lg font-black text-white tracking-tight">{{ global_site_setting.phone_number }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="relative group" id="userDropdown">
+                            <button class="flex items-center space-x-3 focus:outline-none" onclick="toggleDropdown()">
+                                <div class="w-8 h-8 rounded-full overflow-hidden border border-slate-700 bg-slate-800">
+                                    {% if user.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" class="w-full h-full object-cover" alt="Profile">
+                                    {% else %}
+                                        <div class="w-full h-full flex items-center justify-center text-accent text-xs font-bold">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center space-x-3 hidden sm:flex">
+                                    <span class="text-sm font-bold text-slate-300 group-hover:text-white transition">{{ user.username }}</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-[10px] text-slate-500 transition group-hover:text-white"></i>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div id="dropdownMenu" class="absolute right-0 mt-3 w-48 glass rounded-2xl border-slate-800 shadow-2xl py-2 hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                {% if not user.is_staff %}
+                                <a href="{% url 'client_dashboard' %}" class="block px-4 py-2 text-xs font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                    <i class="fas fa-layer-group mr-2"></i> Workspace
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'profile_settings' %}" class="block px-4 py-2 text-xs font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                    <i class="fas fa-cog mr-2"></i> Settings
+                                </a>
+                                {% if user.is_staff %}
+                                    <a href="{% url 'admin_dashboard' %}" class="block px-4 py-2 text-xs font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                        <i class="fas fa-terminal mr-2"></i> Admin Panel
+                                    </a>
+                                {% endif %}
+                                <div class="border-t border-slate-800 my-1"></div>
+                                <form method="post" action="{% url 'account_logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-white/5 transition uppercase tracking-widest">
+                                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'account_login' %}" class="text-xs bg-highlight-400 hover:bg-lime-300 text-slate-950 px-6 py-2 rounded-full transition font-black uppercase tracking-widest">Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% if messages %}
+            <div class="fixed top-20 right-4 z-[100] space-y-2">
+                {% for message in messages %}
+                    <div class="glass border-accent/50 px-6 py-3 rounded-xl shadow-2xl animate-bounce text-sm font-medium">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-slate-950 border-t border-slate-800 py-16 mt-20">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="mb-8">
+                <span class="text-3xl font-bold text-accent tracking-tighter">NEXO</span>
+            </div>
+            <p class="text-slate-500 text-xs uppercase tracking-widest font-bold">© 2026 NEXO Enterprise. All rights reserved.</p>
+        </div>
+    </footer>
+    <script>
+        
+        function toggleDropdown() {
+            const menu = document.getElementById('dropdownMenu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+        function toggleAdminDropdown() {
+            const menu = document.getElementById('adminMenu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        // Close dropdowns when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.closest('#userDropdown')) {
+                const menu = document.getElementById('dropdownMenu');
+                if (menu && !menu.classList.contains('hidden')) {
+                    menu.classList.add('hidden');
+                }
+            }
+            if (!event.target.closest('#adminDropdown')) {
+                const menu = document.getElementById('adminMenu');
+                if (menu && !menu.classList.contains('hidden')) {
+                    menu.classList.add('hidden');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

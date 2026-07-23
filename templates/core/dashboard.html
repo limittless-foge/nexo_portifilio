@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Nexo Dashboard | Professional Digital Solutions{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section id="home" class="relative min-h-[80vh] flex items-center justify-center overflow-hidden hero-gradient">
+    <div class="absolute inset-0 z-0">
+        <img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070" class="w-full h-full object-cover opacity-20" alt="Nexo Banner">
+    </div>
+    <div class="relative z-10 text-center px-4">
+        <div class="inline-block px-4 py-1 rounded-full glass border-accent/30 text-accent text-xs font-bold mb-6 tracking-widest uppercase">
+            Authorized Dashboard
+        </div>
+        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-4">
+            Welcome to the <span class="text-accent">Nexo App</span>
+        </h1>
+        <p class="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-8">
+            Manage your digital presence, explore our premium services, and connect with our elite development team.
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <button onclick="openRatingModal()" class="bg-highlight-400 hover:bg-lime-500 text-slate-900 px-8 py-3 rounded-full font-bold transition transform hover:scale-105 shadow-xl shadow-highlight-400/20">
+                Rate Our Service
+            </button>
+            <a href="{% url 'contact' %}" class="glass border-slate-700 hover:bg-white/5 px-8 py-3 rounded-full font-bold transition">
+                Message Team
+            </a>
+        </div>
+    </div>
+</section>
+
+{% include 'core/includes/about.html' %}
+
+<!-- Skills Section -->
+<section id="skills" class="py-24 bg-slate-950">
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold">Our Expertise</h2>
+            <p class="text-slate-400 text-sm mt-2">Driven by data, polished by design.</p>
+        </div>
+        <div class="space-y-8">
+            <!-- Digital Marketing -->
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-bold">Digital Marketing</span>
+                    <span class="text-sm font-bold text-highlight-400 skill-percent" data-target="95">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div class="bg-highlight-400 h-2 rounded-full skill-bar transition-all duration-[1500ms] ease-out shadow-[0_0_15px_rgba(222,255,154,0.3)]" style="width: 0%"></div>
+                </div>
+            </div>
+            <!-- Web Development -->
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-bold">Web Development</span>
+                    <span class="text-sm font-bold text-highlight-400 skill-percent" data-target="90">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div class="bg-highlight-400 h-2 rounded-full skill-bar transition-all duration-[1500ms] ease-out shadow-[0_0_15px_rgba(222,255,154,0.3)]" style="width: 0%"></div>
+                </div>
+            </div>
+            <!-- App Development -->
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-bold">App Development</span>
+                    <span class="text-sm font-bold text-highlight-400 skill-percent" data-target="85">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div class="bg-highlight-400 h-2 rounded-full skill-bar transition-all duration-[1500ms] ease-out shadow-[0_0_15px_rgba(222,255,154,0.3)]" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% include 'core/includes/services_catalog.html' %}
+
+<!-- Work Gallery -->
+<section id="work" class="py-24 bg-slate-950">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold">{% translate "Experience, Jobs we done" %}</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for project in projects %}
+            <div class="project-card opacity-0 translate-y-12 transition-all duration-700 ease-out group relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 hover:-translate-y-2 hover:border-accent/30">
+                <div class="aspect-video overflow-hidden relative">
+                    {% if project.video %}
+                        <video class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition duration-700 transform group-hover:scale-110" 
+                               autoplay muted loop playsinline 
+                               poster="{% if project.image %}{{ project.image.url }}{% else %}{{ project.image_url }}{% endif %}">
+                            <source src="{{ project.video.url }}" type="video/mp4">
+                        </video>
+                    {% else %}
+                        <img src="{% if project.image %}{{ project.image.url }}{% elif project.image_url %}{{ project.image_url }}{% else %}https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426{% endif %}" 
+                             class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition duration-700 transform group-hover:scale-110" 
+                             alt="{{ project.title }}">
+                    {% endif %}
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
+                </div>
+                <div class="p-8">
+                    <p class="text-accent text-xs font-bold uppercase tracking-widest mb-1">{{ project.category|default:"Tech" }}</p>
+                    <h4 class="text-xl font-bold text-white mb-2">{{ project.title }}</h4>
+                    <p class="text-slate-400 text-sm mb-4">{{ project.description|truncatewords:15 }}</p>
+                    
+                    {% if project.technology_stack %}
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        {% for tech in project.technology_stack.split %}
+                            <span class="text-[8px] font-black uppercase tracking-tighter px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700/50">{{ tech|cut:"," }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <a href="{% if project.case_study_url %}{{ project.case_study_url }}{% else %}#{% endif %}" class="inline-flex items-center text-sm font-bold text-white group/btn hover:text-accent transition">
+                        View Project <i class="fas fa-arrow-right ml-2 transform transition group-hover/btn:translate-x-2"></i>
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full py-20 text-center">
+                <p class="text-slate-500 font-medium">No projects to display in the gallery yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Client Feed -->
+<section id="feed" class="py-24 bg-slate-900">
+    <div class="max-w-4xl mx-auto px-4">
+        <h2 class="text-2xl font-bold mb-12 text-center">Community Feedback</h2>
+        <div class="grid gap-6">
+            {% for review in reviews %}
+            <div class="glass p-6 rounded-xl flex justify-between items-center">
+                <div>
+                    <p class="font-bold">{{ review.user.username }}</p>
+                    <p class="text-slate-400 text-sm italic">"{{ review.comment }}"</p>
+                </div>
+                <div class="flex text-yellow-400 text-sm">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= review.rating %}<i class="fas fa-star"></i>{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Rating Modal -->
+<div id="ratingModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeRatingModal()"></div>
+    <div class="relative w-full max-w-md glass p-10 rounded-2xl shadow-2xl border-accent/20 animate-in fade-in zoom-in duration-300">
+        <button onclick="closeRatingModal()" class="absolute top-4 right-4 text-slate-500 hover:text-white">
+            <i class="fas fa-times"></i>
+        </button>
+        <h3 class="text-2xl font-bold mb-2">Rate Our Service</h3>
+        <p class="text-slate-400 mb-8 text-sm">Your feedback helps us innovate.</p>
+        
+        <form method="post" action="{% url 'home' %}">
+            {% csrf_token %}
+            <div class="mb-8">
+                <div class="flex justify-center space-x-3 text-3xl mb-4" id="modal-stars">
+                    <i class="far fa-star cursor-pointer hover:text-yellow-400 transition" data-value="1"></i>
+                    <i class="far fa-star cursor-pointer hover:text-yellow-400 transition" data-value="2"></i>
+                    <i class="far fa-star cursor-pointer hover:text-yellow-400 transition" data-value="3"></i>
+                    <i class="far fa-star cursor-pointer hover:text-yellow-400 transition" data-value="4"></i>
+                    <i class="far fa-star cursor-pointer hover:text-yellow-400 transition" data-value="5"></i>
+                </div>
+                <input type="hidden" name="rating" id="modal-rating-input" value="0" required>
+            </div>
+            <div class="mb-8">
+                <textarea name="comment" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 focus:ring-2 focus:ring-accent outline-none text-white placeholder-slate-500" placeholder="Your experience..."></textarea>
+            </div>
+            <button type="submit" class="w-full bg-accent hover:bg-blue-600 py-4 rounded-xl font-bold transition shadow-lg shadow-accent/20">
+                Submit Feedback
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Final Polish Interactions
+    const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+
+    // 1. Skills Section Animation
+    const skillBars = document.querySelectorAll('.skill-bar');
+    const skillPercents = document.querySelectorAll('.skill-percent');
+    const skillsSection = document.querySelector('#skills');
+
+    const skillsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateSkills();
+                skillsObserver.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    if (skillsSection) skillsObserver.observe(skillsSection);
+
+    function animateSkills() {
+        skillBars.forEach((bar, index) => {
+            const target = skillPercents[index].dataset.target;
+            // Transition is handled by CSS (duration-1500ms)
+            bar.style.width = target + '%';
+            
+            // Percentage counting animation
+            let current = 0;
+            const increment = target / 75; // 75 steps for ~1.5s at 20ms
+            const counter = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    skillPercents[index].innerText = target + '%';
+                    clearInterval(counter);
+                } else {
+                    skillPercents[index].innerText = Math.floor(current) + '%';
+                }
+            }, 20);
+        });
+    }
+
+    // 2. Project Reveal Animation (Staggered)
+    const projectCards = document.querySelectorAll('.project-card');
+    const projectObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                // Find all visible cards and stagger them
+                const visibleCards = Array.from(projectCards).filter(card => {
+                    const rect = card.getBoundingClientRect();
+                    return rect.top < window.innerHeight && rect.bottom > 0;
+                });
+                
+                const cardIndex = visibleCards.indexOf(entry.target);
+                setTimeout(() => {
+                    entry.target.classList.remove('opacity-0', 'translate-y-12');
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                }, cardIndex * 200);
+                
+                projectObserver.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    projectCards.forEach(card => projectObserver.observe(card));
+
+    // Rating Modal Logic
+    const modal = document.getElementById('ratingModal');
+    const modalStars = document.querySelectorAll('#modal-stars i');
+    const modalRatingInput = document.getElementById('modal-rating-input');
+
+    function openRatingModal() {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeRatingModal() {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    modalStars.forEach(star => {
+        star.addEventListener('mouseover', function() {
+            highlightModalStars(this.dataset.value);
+        });
+        star.addEventListener('click', function() {
+            modalRatingInput.value = this.dataset.value;
+            setModalActiveStars(this.dataset.value);
+        });
+        star.addEventListener('mouseout', function() {
+            highlightModalStars(modalRatingInput.value);
+        });
+    });
+
+    function highlightModalStars(val) {
+        modalStars.forEach(star => {
+            if (star.dataset.value <= val) {
+                star.classList.remove('far');
+                star.classList.add('fas', 'text-yellow-400');
+            } else {
+                star.classList.remove('fas', 'text-yellow-400');
+                star.classList.add('far');
+            }
+        });
+    }
+
+    function setModalActiveStars(val) {
+        modalStars.forEach(star => {
+            if (star.dataset.value <= val) star.classList.add('active');
+            else star.classList.remove('active');
+        });
+    }
+</script>
+    <!-- Social Connect -->
+    <section class="py-12 border-t border-slate-900 bg-slate-950/50">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col items-center">
+            <p class="text-slate-500 text-xs font-black uppercase tracking-[0.3em] mb-8">Connect with Nexo</p>
+            <div class="flex flex-wrap justify-center gap-8 md:gap-12">
+                <!-- Facebook -->
+                <a href="#" class="group transition-transform hover:scale-110" title="Facebook">
+                    <svg class="w-6 h-6 text-slate-500 group-hover:text-blue-500 transition-colors fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </a>
+                <!-- Instagram -->
+                <a href="#" class="group transition-transform hover:scale-110" title="Instagram">
+                    <svg class="w-6 h-6 text-slate-500 group-hover:text-pink-500 transition-colors fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                </a>
+                <!-- LinkedIn -->
+                <a href="#" class="group transition-transform hover:scale-110" title="LinkedIn">
+                    <svg class="w-6 h-6 text-slate-500 group-hover:text-blue-600 transition-colors fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                </a>
+                <!-- GitHub -->
+                <a href="#" class="group transition-transform hover:scale-110" title="GitHub">
+                    <svg class="w-6 h-6 text-slate-500 group-hover:text-white transition-colors fill-current" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                </a>
+                <!-- Telegram -->
+                <a href="#" class="group transition-transform hover:scale-110" title="Telegram">
+                    <svg class="w-6 h-6 text-slate-500 group-hover:text-blue-400 transition-colors fill-current" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-2.003 9.442c-.149.659-.539.822-1.091.511l-3.051-2.25-1.47 1.415c-.163.163-.299.299-.614.299l.219-3.105 5.652-5.105c.246-.219-.054-.341-.381-.123l-6.984 4.398-3.011-.941c-.655-.204-.667-.655.136-.967l11.772-4.536c.545-.198 1.022.129.826.957z"/></svg>
+                </a>
+                <!-- TikTok -->
+                <a href="#" class="group transition-transform hover:scale-110" title="TikTok">
+                    <svg class="w-6 h-6 text-slate-500 group-hover:text-pink-400 transition-colors fill-current" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.06-.03-.11-.07-.17-.1v9.98c0 5.64-5.06 10.12-10.75 9.06-4.14-.77-7.39-4.68-7.33-8.89.01-4.34 3.49-7.8 7.83-7.8 1.39 0 2.71.36 3.86 1.03V0c-.05.01-.1.01-.14.02z"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

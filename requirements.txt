@@ -1,0 +1,8 @@
+psycopg2-binary
+python-dotenv
+django
+django-allauth
+pillow
+cloudinary
+django-cloudinary-storage
+djangorestframework

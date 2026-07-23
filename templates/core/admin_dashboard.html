@@ -1,0 +1,542 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Command Center | NEXO{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-950 py-24 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="mb-12">
+            <h1 class="text-4xl font-extrabold text-white tracking-tight">Admin Command Center</h1>
+            <p class="text-slate-400 mt-2">Manage users, reviews, and platform intelligence.</p>
+        </div>
+
+        <div class="space-y-12">
+            <!-- Portfolio Management (Full Width) -->
+            <div class="glass p-8 rounded-3xl border-slate-800">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white"><i class="fas fa-briefcase mr-3 text-highlight-400"></i> Portfolio Management</h2>
+                        <p class="text-slate-500 text-xs mt-1 uppercase tracking-widest font-bold">Manage agency case studies and media</p>
+                    </div>
+                    <a href="/admin/core/project/add/" class="px-6 py-3 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-highlight-400/10">
+                        <i class="fas fa-plus mr-2"></i> Add New Project
+                    </a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-500 text-[10px] uppercase tracking-widest border-b border-slate-800">
+                                <th class="pb-4 font-bold">Project</th>
+                                <th class="pb-4 font-bold">Category</th>
+                                <th class="pb-4 font-bold text-center">Media Type</th>
+                                <th class="pb-4 font-bold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            {% for project in projects %}
+                            <tr class="border-b border-slate-800/50 group">
+                                <td class="py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-12 h-8 rounded-lg bg-slate-800 overflow-hidden mr-4 border border-slate-700">
+                                            {% if project.image %}
+                                                <img src="{{ project.image.url }}" class="w-full h-full object-cover" alt="">
+                                            {% elif project.image_url %}
+                                                <img src="{{ project.image_url }}" class="w-full h-full object-cover" alt="">
+                                            {% else %}
+                                                <div class="w-full h-full flex items-center justify-center text-[10px] text-slate-600">N/A</div>
+                                            {% endif %}
+                                        </div>
+                                        <span class="text-white font-bold">{{ project.title }}</span>
+                                    </div>
+                                </td>
+                                <td class="py-4 text-slate-400 uppercase text-[10px] font-black tracking-widest">{{ project.category_display }}</td>
+                                <td class="py-4 text-center">
+                                    {% if project.video %}
+                                        <span class="text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter">Video</span>
+                                    {% else %}
+                                        <span class="text-slate-500 bg-slate-800 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter">Image</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-4 text-right">
+                                    <div class="flex justify-end space-x-3">
+                                        <a href="/admin/core/project/{{ project.id }}/change/" class="text-slate-500 hover:text-white transition"><i class="fas fa-edit"></i></a>
+                                        <form action="{% url 'delete_project' project.id %}" method="POST" onsubmit="return confirm('Archive this project?');" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-red-500/50 hover:text-red-500 transition">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="py-10 text-center text-slate-500 text-sm italic">No projects found in the portfolio.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Leadership Management (NEW) -->
+            <div class="glass p-8 rounded-3xl border-slate-800">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-2xl font-black text-white"><i class="fas fa-crown mr-3 text-highlight-400"></i> Leadership Management</h2>
+                        <p class="text-slate-500 text-xs mt-1 uppercase tracking-widest font-bold">Manage agency leadership and team roles</p>
+                    </div>
+                    <button type="button" onclick="openAddLeaderModal()" class="px-6 py-3 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-highlight-400/10 flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Add New Leader
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-500 text-[10px] uppercase tracking-widest border-b border-slate-800">
+                                <th class="pb-4 font-bold">Leader</th>
+                                <th class="pb-4 font-bold">Job Role & Bio</th>
+                                <th class="pb-4 font-bold text-center">Order</th>
+                                <th class="pb-4 font-bold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadership-table-body" class="text-sm">
+                            {% for member in team_members %}
+                            <tr class="border-b border-slate-800/50 group" id="leader-row-{{ member.id }}">
+                                <td class="py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-slate-800 overflow-hidden mr-4 border border-slate-700 flex-shrink-0 flex items-center justify-center">
+                                            {% if member.image_display %}
+                                                <img src="{{ member.image_display }}" class="w-full h-full object-cover" alt="{{ member.name }}">
+                                            {% else %}
+                                                <div class="w-full h-full flex items-center justify-center text-accent text-xs font-bold">{{ member.name|first|upper }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <span class="text-white font-bold">{{ member.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="py-4">
+                                    <p class="text-slate-300 font-bold text-xs">{{ member.job_role }}</p>
+                                    {% if member.bio %}
+                                        <p class="text-slate-500 text-[11px] mt-0.5 line-clamp-1 max-w-xs">{{ member.bio }}</p>
+                                    {% endif %}
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="text-slate-400 bg-slate-800 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter">{{ member.order }}</span>
+                                </td>
+                                <td class="py-4 text-right">
+                                    <div class="flex justify-end space-x-3 items-center">
+                                        <button type="button" onclick="openEditLeaderModal('{{ member.id }}', '{{ member.name|escapejs }}', '{{ member.job_role|escapejs }}', '{{ member.bio|default:''|escapejs }}', '{{ member.image_url|default:''|escapejs }}', '{{ member.order }}')"
+                                                class="text-slate-500 hover:text-white transition text-xs">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form action="{% url 'delete_leader' member.id %}" method="POST" onsubmit="return confirm('Remove this team member?');" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-red-500/50 hover:text-red-500 transition text-xs">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr id="no-leadership-row">
+                                <td colspan="4" class="py-10 text-center text-slate-500 text-sm italic">No team members found in the leadership.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Registered Client Accounts -->
+            <div class="glass p-8 rounded-3xl border-slate-800">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white"><i class="fas fa-users-cog mr-3 text-highlight-400"></i> Registered Client Accounts</h2>
+                        <p class="text-slate-500 text-xs mt-1 uppercase tracking-widest font-bold">Monitor onboarding status, selected services, and chosen pricing tiers</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-500 text-[10px] uppercase tracking-widest border-b border-slate-800">
+                                <th class="pb-4 font-bold">Client User</th>
+                                <th class="pb-4 font-bold">Chosen Tier</th>
+                                <th class="pb-4 font-bold">Onboarding Status</th>
+                                <th class="pb-4 font-bold">Selected Services</th>
+                                <th class="pb-4 font-bold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            {% for profile in client_profiles %}
+                            <tr class="border-b border-slate-800/50 group">
+                                <td class="py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-accent text-xs font-bold mr-4 border border-slate-700">
+                                            {{ profile.user.username|first|upper }}
+                                        </div>
+                                        <div>
+                                            <span class="text-white font-bold block">{{ profile.user.username }}</span>
+                                            <span class="text-slate-500 text-xs block">{{ profile.user.email }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4">
+                                    {% if profile.chosen_tier == "Starter" %}
+                                        <span class="text-[9px] bg-slate-800 border border-slate-700 text-white px-2 py-0.5 rounded font-black uppercase tracking-widest">{{ profile.chosen_tier }}</span>
+                                    {% elif profile.chosen_tier == "Professional" %}
+                                        <span class="text-[9px] bg-accent/20 border border-accent text-accent px-2 py-0.5 rounded font-black uppercase tracking-widest">{{ profile.chosen_tier }}</span>
+                                    {% elif profile.chosen_tier == "Enterprise" %}
+                                        <span class="text-[9px] bg-highlight-400/10 border border-highlight-400/20 text-highlight-400 px-2 py-0.5 rounded font-black uppercase tracking-widest">{{ profile.chosen_tier }}</span>
+                                    {% else %}
+                                        <span class="text-[9px] bg-slate-850 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-widest">None</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-4">
+                                    {% if profile.onboarding_completed %}
+                                        <span class="text-green-400 bg-green-400/10 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter">Completed</span>
+                                    {% else %}
+                                        <span class="text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter">In Progress</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-4 max-w-xs">
+                                    <div class="flex flex-wrap gap-1.5">
+                                        {% for s in profile.selected_services.all %}
+                                            <span class="text-[8px] bg-slate-900 border border-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-bold animate-in fade-in" title="{{ s.title }}">
+                                                {{ s.title|truncatechars:15 }}
+                                            </span>
+                                        {% empty %}
+                                            <span class="text-slate-600 text-xs italic">No services ticked</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="py-4 text-right">
+                                    <a href="{% url 'client_dashboard_detail' profile.user.id %}" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition">
+                                        View Dashboard
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="py-10 text-center text-slate-500 text-sm italic">No registered client accounts found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Platform Media & Branding (NEW) -->
+            <div class="glass p-8 rounded-3xl border-slate-800">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white"><i class="fas fa-clapperboard mr-3 text-highlight-400"></i> Platform Branding & Media</h2>
+                        <p class="text-slate-500 text-xs mt-1 uppercase tracking-widest font-bold">Manage "Our Story" video and fallback images</p>
+                    </div>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" class="grid md:grid-cols-2 gap-8">
+                    {% csrf_token %}
+                    <input type="hidden" name="update_site_settings" value="1">
+                    
+                    <!-- Video Upload -->
+                    <div class="relative group p-8 rounded-3xl border-2 border-dashed border-slate-800 hover:border-accent/30 transition bg-slate-900/30 text-center flex flex-col justify-between">
+                        <div class="mb-4">
+                            <div class="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-4">
+                                <i class="fas fa-video text-2xl"></i>
+                            </div>
+                            <h3 class="text-white font-bold mb-1">Our Story Video</h3>
+                            <p class="text-slate-500 text-xs mb-4">Current: {% if site_setting.our_story_video %}<span class="text-accent font-black">Live</span>{% else %}<span class="text-slate-600 font-bold">Not Set</span>{% endif %}</p>
+                        </div>
+                        <div class="flex flex-col gap-3 items-center">
+                            <label for="video-upload" class="cursor-pointer inline-flex items-center px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition">
+                                <i class="fas fa-upload mr-2"></i> Choose MP4 Video
+                            </label>
+                            {{ site_form.our_story_video }}
+
+                            {% if site_setting.our_story_video %}
+                                <button type="submit" name="delete_video" value="1" onclick="return confirm('Remove Our Story video?');" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase tracking-wider transition inline-flex items-center gap-1 mt-1">
+                                    <i class="fas fa-trash-alt"></i> Delete Video Asset
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="relative group p-8 rounded-3xl border-2 border-dashed border-slate-800 hover:border-accent/30 transition bg-slate-900/30 text-center flex flex-col justify-between">
+                        <div class="mb-4">
+                            <div class="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 mx-auto mb-4">
+                                <i class="fas fa-image text-2xl"></i>
+                            </div>
+                            <h3 class="text-white font-bold mb-1">Fallback Image</h3>
+                            <p class="text-slate-500 text-xs mb-4">Current: {% if site_setting.our_story_image %}<span class="text-blue-400 font-black">Live</span>{% else %}<span class="text-slate-600 font-bold">Not Set</span>{% endif %}</p>
+                        </div>
+                        <div class="flex flex-col gap-3 items-center">
+                            <label for="image-upload" class="cursor-pointer inline-flex items-center px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition">
+                                <i class="fas fa-upload mr-2"></i> Choose JPG/PNG Image
+                            </label>
+                            {{ site_form.our_story_image }}
+
+                            {% if site_setting.our_story_image %}
+                                <button type="submit" name="delete_image" value="1" onclick="return confirm('Remove Fallback image?');" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase tracking-wider transition inline-flex items-center gap-1 mt-1">
+                                    <i class="fas fa-trash-alt"></i> Delete Image Asset
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="md:col-span-2 p-8 rounded-3xl border border-slate-800 bg-slate-900/30">
+                        <div class="flex items-center mb-6">
+                            <div class="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-400 mr-4">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-bold">Contact Phone Number</h3>
+                                <p class="text-slate-500 text-xs uppercase tracking-widest font-bold">Displayed across the platform</p>
+                            </div>
+                        </div>
+                        {{ site_form.phone_number }}
+                    </div>
+
+                    <div class="md:col-span-2 flex justify-end mt-4">
+                        <button type="submit" class="px-10 py-4 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-sm font-black uppercase tracking-widest rounded-2xl transition shadow-xl shadow-highlight-400/20">
+                            Save Branding Assets
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12">
+            <!-- User Management -->
+            <div class="glass p-8 rounded-3xl border-slate-800">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-2xl font-bold text-white"><i class="fas fa-users mr-3 text-highlight-400"></i> Platform Users</h2>
+                    <span class="bg-slate-800 text-slate-400 text-[10px] px-3 py-1 rounded-full uppercase font-black tracking-widest">{{ users.count }} Total</span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-500 text-[10px] uppercase tracking-widest border-b border-slate-800">
+                                <th class="pb-4 font-bold">User</th>
+                                <th class="pb-4 font-bold">Email</th>
+                                <th class="pb-4 font-bold text-center">Status</th>
+                                <th class="pb-4 font-bold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            {% for user in users %}
+                            <tr class="border-b border-slate-800/50 group">
+                                <td class="py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-accent text-xs font-bold mr-3">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                        <span class="text-white font-medium">{{ user.username }}</span>
+                                    </div>
+                                </td>
+                                <td class="py-4 text-slate-400">{{ user.email }}</td>
+                                <td class="py-4 text-center">
+                                    {% if user.is_staff %}
+                                        <span class="text-highlight-400 bg-highlight-400/10 px-2 py-0.5 rounded-md text-[9px] font-black uppercase">Staff</span>
+                                    {% else %}
+                                        <span class="text-slate-600 bg-slate-800 px-2 py-0.5 rounded-md text-[9px] font-black uppercase">User</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-4 text-right">
+                                    <a href="/admin/auth/user/{{ user.id }}/password/" class="text-accent hover:text-blue-400 transition text-[10px] font-bold uppercase tracking-widest">Reset</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Review Management -->
+            <div class="glass p-8 rounded-3xl border-slate-800">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-2xl font-bold text-white"><i class="fas fa-star mr-3 text-highlight-400"></i> Feedback Logs</h2>
+                    <span class="bg-slate-800 text-slate-400 text-[10px] px-3 py-1 rounded-full uppercase font-black tracking-widest">{{ reviews.count }} Reviews</span>
+                </div>
+
+                <div class="space-y-6">
+                    {% for review in reviews %}
+                    <div class="p-6 bg-slate-900/50 rounded-2xl border border-slate-800 group hover:border-accent/30 transition">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-accent font-bold mr-4">
+                                    {{ review.user.username|first|upper }}
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold">{{ review.user.username }}</h4>
+                                    <div class="flex text-yellow-400 text-[10px] mt-1">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                                <i class="fas fa-star"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <form action="{% url 'delete_review' review.id %}" method="POST" onsubmit="return confirm('Archive this feedback?');">
+                                {% csrf_token %}
+                                <button type="submit" class="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition opacity-0 group-hover:opacity-100">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                            </form>
+                        </div>
+                        <p class="text-slate-400 text-sm italic leading-relaxed">"{{ review.comment }}"</p>
+                        <div class="mt-4 text-[9px] text-slate-600 font-bold uppercase tracking-tighter">Logged at {{ review.created_at|date:"Y-m-d H:i" }}</div>
+                    </div>
+                    {% empty %}
+                    <p class="text-slate-500 text-sm text-center py-10">No feedback logs found.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leader Modal (In-Page Create & Edit) -->
+<div id="add-leader-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm" onclick="closeAddLeaderModal()"></div>
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-lg w-full relative z-10 mx-4 shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h4 id="leader-modal-title" class="text-white text-base font-black tracking-tight flex items-center gap-2">
+                <i class="fas fa-crown text-highlight-400"></i> Add New Team Leader
+            </h4>
+            <button onclick="closeAddLeaderModal()" class="text-slate-500 hover:text-white transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <input type="hidden" id="leader-id" value="">
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Full Name</label>
+                <input type="text" id="leader-name" placeholder="e.g. Marcus Nexo"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-highlight-400">
+            </div>
+
+            <div>
+                <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Job Role / Title</label>
+                <input type="text" id="leader-role" placeholder="e.g. Technical Lead & Co-Founder"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-highlight-400">
+            </div>
+
+            <div>
+                <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Short Bio / Background</label>
+                <textarea id="leader-bio" rows="3" placeholder="Visionary architect specializing in distributed systems…"
+                          class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-highlight-400 leading-relaxed"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Avatar Image URL (Cloudinary or Direct Link)</label>
+                <input type="url" id="leader-image-url" placeholder="https://images.unsplash.com/photo-..."
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-highlight-400">
+            </div>
+
+            <div>
+                <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Display Order</label>
+                <input type="number" id="leader-order" value="0" min="0"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-highlight-400">
+            </div>
+
+            <p id="leader-feedback" class="text-[10px] min-h-[1.25rem]"></p>
+
+            <button id="leader-submit-btn" onclick="submitAddLeader()"
+                    class="w-full py-3 bg-highlight-400 hover:bg-lime-300 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl transition shadow-lg shadow-highlight-400/20">
+                Save Team Member
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAddLeaderModal() {
+    document.getElementById('leader-id').value = '';
+    document.getElementById('leader-name').value = '';
+    document.getElementById('leader-role').value = '';
+    document.getElementById('leader-bio').value = '';
+    document.getElementById('leader-image-url').value = '';
+    document.getElementById('leader-order').value = '0';
+    document.getElementById('leader-modal-title').innerHTML = '<i class="fas fa-crown text-highlight-400"></i> Add New Team Leader';
+    document.getElementById('leader-feedback').textContent = '';
+    document.getElementById('add-leader-modal').classList.remove('hidden');
+    document.getElementById('leader-name').focus();
+}
+
+function openEditLeaderModal(id, name, role, bio, image_url, order) {
+    document.getElementById('leader-id').value = id;
+    document.getElementById('leader-name').value = name;
+    document.getElementById('leader-role').value = role;
+    document.getElementById('leader-bio').value = bio;
+    document.getElementById('leader-image-url').value = image_url;
+    document.getElementById('leader-order').value = order;
+    document.getElementById('leader-modal-title').innerHTML = '<i class="fas fa-edit text-highlight-400"></i> Edit Team Leader';
+    document.getElementById('leader-feedback').textContent = '';
+    document.getElementById('add-leader-modal').classList.remove('hidden');
+    document.getElementById('leader-name').focus();
+}
+
+function closeAddLeaderModal() {
+    document.getElementById('add-leader-modal').classList.add('hidden');
+}
+
+async function submitAddLeader() {
+    const id = document.getElementById('leader-id').value;
+    const name = document.getElementById('leader-name').value.trim();
+    const job_role = document.getElementById('leader-role').value.trim();
+    const bio = document.getElementById('leader-bio').value.trim();
+    const image_url = document.getElementById('leader-image-url').value.trim();
+    const order = document.getElementById('leader-order').value;
+    const feedback = document.getElementById('leader-feedback');
+    const btn = document.getElementById('leader-submit-btn');
+
+    if (!name || !job_role) {
+        feedback.textContent = 'Name and Job Role are required.';
+        feedback.className = 'text-[10px] text-red-400';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+        const resp = await fetch('/api/team/add/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, name, job_role, bio, image_url, order })
+        });
+        const res = await resp.json();
+
+        if (res.status === 'success') {
+            feedback.textContent = '✓ Saved successfully!';
+            feedback.className = 'text-[10px] text-emerald-400';
+
+            setTimeout(() => {
+                closeAddLeaderModal();
+                window.location.reload();
+            }, 500);
+        } else {
+            throw new Error(res.message || 'Error saving leader.');
+        }
+    } catch(e) {
+        feedback.textContent = e.message;
+        feedback.className = 'text-[10px] text-red-400';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Team Member';
+    }
+}
+</script>
+{% endblock %}

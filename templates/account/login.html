@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Login | NEXO{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-950 relative overflow-hidden">
+    <!-- Background Decor -->
+    <div class="absolute top-0 left-0 w-full h-full">
+        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-900/20 rounded-full blur-[120px]"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-highlight-400/10 rounded-full blur-[120px]"></div>
+    </div>
+
+    <div class="max-w-md w-full relative z-10">
+        <!-- Brand Logo -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-black tracking-tighter text-white">NEXO<span class="text-highlight-400">.</span></h1>
+            <p class="text-slate-500 text-xs uppercase tracking-[0.2em] font-bold mt-2">Digital Intelligence</p>
+        </div>
+
+        <!-- Glass Card -->
+        <div class="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[2rem] border border-slate-800 shadow-2xl">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-white">Sign In</h2>
+                <p class="text-slate-400 text-sm mt-1">Welcome back to the elite network.</p>
+            </div>
+
+            {% if form.errors %}
+                <div class="error-messages mb-6 bg-red-500/10 border border-red-500/30 p-4 rounded-2xl text-xs text-red-400 space-y-1">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p><strong>{{ field.label }}:</strong> {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form class="space-y-5" method="POST" action="{% url 'account_login' %}">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    {% for field in form %}
+                    <div>
+                        <input id="{{ field.id_for_label }}" name="{{ field.name }}" type="{{ field.field.widget.input_type }}" 
+                               autocomplete="{{ field.name }}" {% if field.field.required %}required{% endif %} 
+                               class="w-full px-5 py-4 bg-slate-800/50 border border-slate-700/50 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-highlight-400/50 transition-all text-sm" 
+                               placeholder="{% if field.name == 'login' %}Username or Email{% else %}{{ field.label }}{% endif %}">
+                        {% if field.errors %}
+                            <p class="text-red-400 text-[10px] mt-1 ml-2">{{ field.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider">
+                    <div class="flex items-center">
+                        <input id="remember_me" name="remember" type="checkbox" class="h-3 w-3 text-highlight-400 focus:ring-highlight-400 border-slate-700 rounded bg-slate-800">
+                        <label for="remember_me" class="ml-2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
+                            Remember
+                        </label>
+                    </div>
+                    <a href="{% url 'account_reset_password' %}" class="text-highlight-400 hover:text-lime-300 transition">
+                        Reset Access?
+                    </a>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full py-4 bg-highlight-400 hover:bg-lime-300 text-slate-950 font-black text-sm rounded-2xl transition shadow-lg shadow-highlight-400/20 transform hover:-translate-y-1">
+                        SIGN IN
+                    </button>
+                </div>
+            </form>
+
+            <!-- Social Auth -->
+            <div class="mt-10">
+                <div class="relative flex items-center justify-center mb-8">
+                    <div class="w-full border-t border-slate-800"></div>
+                    <span class="absolute px-4 bg-[#0a0f1b] text-[10px] font-bold text-slate-500 uppercase tracking-widest">Connect with</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="{% provider_login_url 'google' %}" class="flex items-center justify-center py-3 px-4 bg-slate-800/30 border border-slate-700/50 rounded-xl hover:bg-slate-800 transition group">
+                        <i class="fab fa-google text-slate-400 group-hover:text-white"></i>
+                    </a>
+                    <a href="{% provider_login_url 'github' %}" class="flex items-center justify-center py-3 px-4 bg-slate-800/30 border border-slate-700/50 rounded-xl hover:bg-slate-800 transition group">
+                        <i class="fab fa-github text-slate-400 group-hover:text-white"></i>
+                    </a>
+                </div>
+            </div>
+
+            <p class="mt-10 text-center text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+                New to Nexo? 
+                <a href="{% url 'account_signup' %}" class="text-highlight-400 hover:text-lime-300 transition">Create Identity</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
