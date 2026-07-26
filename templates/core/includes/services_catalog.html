@@ -2,6 +2,38 @@
 <section id="services-catalog" class="py-16 bg-slate-950 border-t border-slate-900/80 relative overflow-hidden">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
+        <!-- Django URLs Bridge -->
+        <span id="django-urls" 
+              data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"
+              data-select-url="{% url 'select_services' %}"
+              data-login-url="{% url 'account_login' %}?next={% url 'select_services' %}"
+              class="hidden"></span>
+
+        <!-- Catalog JSON Data -->
+        <script id="catalog-data" type="application/json">
+        [
+            {% for category in categories %}
+            {
+                "id": "{{ category.id }}",
+                "title": "{{ category.title }}",
+                "desc": "{{ category.description|escapejs }}",
+                "icon": "{{ category.icon_class }}",
+                "is_external": {% if category.is_external_link %}true{% else %}false{% endif %},
+                "external_url": "{{ category.external_url|default:'' }}",
+                "subservices": [
+                    {% for sub in category.subservices.all %}
+                    {
+                        "id": "{{ sub.id }}",
+                        "title": "{{ sub.title|escapejs }}",
+                        "desc": "{{ sub.short_explanation|escapejs }}"
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+        </script>
+
         <!-- Section Header -->
         <div class="text-center mb-16">
             <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-black uppercase tracking-widest mb-4">
@@ -11,414 +43,198 @@
             <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
                 7 Core Service Domains
             </h1>
+            <p class="text-[#D4AF37] text-sm md:text-base font-bold tracking-wider mb-2">
+                70+ Integrated Services
+            </p>
             <p class="text-slate-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
-                Explore our full suite of professional services across 7 specialized domains. Click any category card to expand sub-service breakdowns and request workspace delivery.
+                Explore our full suite of professional services across specialized domains. Click any category card to expand sub-service breakdowns and request workspace delivery.
             </p>
         </div>
 
-        <!-- Catalog Grid (7 Categories) -->
+        <!-- Catalog Grid (Dynamic Categories) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
-            <!-- 1. Graphic & Print Design -->
-            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]">
+            {% for category in categories %}
+            <!-- Category Card -->
+            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]"
+                 {% if category.is_external_link %}
+                 onclick="window.open('{% if category.title == 'Education & Multimedia' %}{{ site_settings.education_external_url|default:category.external_url }}{% else %}{{ category.external_url }}{% endif %}', '_blank')"
+                 {% else %}
+                 onclick="openServiceModal('{{ category.id }}')"
+                 {% endif %}>
+                
                 <div class="h-32 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1626785774625-ddcddc3445e9?q=80&w=2071" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt="Graphic Design">
+                    {% if category.header_image %}
+                    <img src="{{ category.header_image }}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt="{{ category.title }}">
+                    {% else %}
+                    <div class="w-full h-full bg-slate-900 flex items-center justify-center">
+                        <i class="{{ category.icon_class }} text-slate-700 text-4xl"></i>
+                    </div>
+                    {% endif %}
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                    
+                    {% if category.is_external_link %}
+                    <!-- External Link Badge -->
+                    <div class="absolute top-4 right-4 bg-emerald-500/90 border border-emerald-400/30 text-slate-950 text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded-md shadow-lg">
+                        External Link <i class="fas fa-external-link-alt ml-0.5"></i>
+                    </div>
+                    {% endif %}
                 </div>
+
                 <div class="p-6 relative z-10">
                     <div class="w-10 h-10 bg-[#D4AF37]/10 rounded-xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
-                        <i class="fas fa-palette text-lg"></i>
+                        <i class="{{ category.icon_class }} text-lg"></i>
                     </div>
-                    <h3 class="text-lg font-black text-white mb-1">Graphic & Print Design</h3>
-                    <p class="text-slate-400 text-xs leading-relaxed mb-3">Visual identity crafted for print and digital impact.</p>
+                    <h3 class="text-lg font-black text-white mb-1">{{ category.title }}</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed mb-3">{{ category.description }}</p>
 
-                    <!-- Sub-services -->
-                    <div class="expandable-description max-h-0 overflow-hidden transition-all duration-500 ease-in-out opacity-0">
-                        <div class="pt-4 border-t border-slate-800/80 text-left space-y-2">
-                            <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Presentation slide design <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Design professional slide decks in PowerPoint, Keynote, or Google Slides.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Book covers & eBook design <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Captivating cover designs for print and digital publications.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Corporate letterheads & flyers <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Official corporate stationery, branded profiles, and print PDFs.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
+                    <!-- Sub-services Preview List -->
+                    {% if not category.is_external_link %}
+                    <div class="pt-4 border-t border-slate-850 text-left space-y-2">
+                        <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
+                            {% for sub in category.subservices.all|slice:":3" %}
+                            <li class="sub-service-item cursor-pointer py-1" onclick="event.stopPropagation(); openSubServiceModal('{{ category.id }}', '{{ sub.id }}')">
+                                <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
+                                    {{ sub.title }} <i class="fas fa-chevron-right text-[8px] text-slate-600"></i>
+                                </span>
+                            </li>
+                            {% endfor %}
+                            {% if category.subservices.count > 3 %}
+                            <li class="py-1 text-[10px] text-slate-500 font-bold tracking-wide italic">
+                                + {{ category.subservices.count|add:"-3" }} more services
+                            </li>
+                            {% endif %}
+                        </ul>
                     </div>
+                    {% else %}
+                    <div class="pt-4 border-t border-slate-850 text-center" onclick="event.stopPropagation();">
+                        <a href="{% if category.title == 'Education & Multimedia' %}{{ site_settings.education_external_url|default:category.external_url }}{% else %}{{ category.external_url }}{% endif %}" target="_blank" class="text-[10px] text-[#D4AF37] font-black uppercase tracking-wider flex items-center justify-center gap-1 hover:text-white transition">
+                            <i class="fas fa-external-link-alt"></i> Open external link
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
-
-            <!-- 2. Writing & Editorial -->
-            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]">
-                <div class="h-32 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=2073" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt="Writing">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
-                </div>
-                <div class="p-6 relative z-10">
-                    <div class="w-10 h-10 bg-[#D4AF37]/10 rounded-xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
-                        <i class="fas fa-pen-nib text-lg"></i>
-                    </div>
-                    <h3 class="text-lg font-black text-white mb-1">Writing & Editorial</h3>
-                    <p class="text-slate-400 text-xs leading-relaxed mb-3">Words that persuade, inform, and convert.</p>
-
-                    <!-- Sub-services -->
-                    <div class="expandable-description max-h-0 overflow-hidden transition-all duration-500 ease-in-out opacity-0">
-                        <div class="pt-4 border-t border-slate-800/80 text-left space-y-2">
-                            <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        SEO articles & blog copy <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Deeply researched articles and blog posts tailored to your brand voice.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Website & landing page copy <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">High-converting copy for home, about, services, and sales landing pages.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Academic & Research Support -->
-            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]">
-                <div class="h-32 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=2074" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt="Academic">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
-                </div>
-                <div class="p-6 relative z-10">
-                    <div class="w-10 h-10 bg-[#D4AF37]/10 rounded-xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
-                        <i class="fas fa-graduation-cap text-lg"></i>
-                    </div>
-                    <h3 class="text-lg font-black text-white mb-1">Academic & Research</h3>
-                    <p class="text-slate-400 text-xs leading-relaxed mb-3">Rigorous research and academic formatting.</p>
-
-                    <!-- Sub-services -->
-                    <div class="expandable-description max-h-0 overflow-hidden transition-all duration-500 ease-in-out opacity-0">
-                        <div class="pt-4 border-t border-slate-800/80 text-left space-y-2">
-                            <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Literature review & citations <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Comprehensive literature synthesis formatted in APA, IEEE, Harvard, or MLA styles.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Data & Tech Solutions -->
-            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]">
-                <div class="h-32 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt="Data & Tech">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
-                </div>
-                <div class="p-6 relative z-10">
-                    <div class="w-10 h-10 bg-[#D4AF37]/10 rounded-xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
-                        <i class="fas fa-database text-lg"></i>
-                    </div>
-                    <h3 class="text-lg font-black text-white mb-1">Data & Tech Solutions</h3>
-                    <p class="text-slate-400 text-xs leading-relaxed mb-3">Custom web software, APIs, and analytics engineering.</p>
-
-                    <!-- Sub-services -->
-                    <div class="expandable-description max-h-0 overflow-hidden transition-all duration-500 ease-in-out opacity-0">
-                        <div class="pt-4 border-t border-slate-800/80 text-left space-y-2">
-                            <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Web app development (Django & React) <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Full-stack web applications with authentication, databases, and custom REST APIs.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Data analytics & PowerBI dashboards <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Data cleaning, automated SQL/Excel pipelines, and real-time PowerBI dashboard visualizations.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5. Web & Digital Marketing -->
-            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]">
-                <div class="h-32 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt="Marketing">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
-                </div>
-                <div class="p-6 relative z-10">
-                    <div class="w-10 h-10 bg-[#D4AF37]/10 rounded-xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
-                        <i class="fas fa-bullhorn text-lg"></i>
-                    </div>
-                    <h3 class="text-lg font-black text-white mb-1">Web & Digital Marketing</h3>
-                    <p class="text-slate-400 text-xs leading-relaxed mb-3">Multi-channel growth, campaigns, and audience engagement.</p>
-
-                    <!-- Sub-services -->
-                    <div class="expandable-description max-h-0 overflow-hidden transition-all duration-500 ease-in-out opacity-0">
-                        <div class="pt-4 border-t border-slate-800/80 text-left space-y-2">
-                            <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Social media strategy & campaigns <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Content calendars, campaign ad creative, and social media audience growth.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        SEO technical audits & optimization <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Technical SEO audits, speed optimization, and search engine ranking improvements.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 6. Business Strategy & Admin -->
-            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]">
-                <div class="h-32 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=2071" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt="Business Strategy">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
-                </div>
-                <div class="p-6 relative z-10">
-                    <div class="w-10 h-10 bg-[#D4AF37]/10 rounded-xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
-                        <i class="fas fa-chart-line text-lg"></i>
-                    </div>
-                    <h3 class="text-lg font-black text-white mb-1">Business Strategy & Admin</h3>
-                    <p class="text-slate-400 text-xs leading-relaxed mb-3">Pitch decks, financial modeling, and administrative support.</p>
-
-                    <!-- Sub-services -->
-                    <div class="expandable-description max-h-0 overflow-hidden transition-all duration-500 ease-in-out opacity-0">
-                        <div class="pt-4 border-t border-slate-800/80 text-left space-y-2">
-                            <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        Investor pitch decks & plans <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">High-converting investor pitch decks and formal business planning documentation.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 7. Education & Multimedia -->
-            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]">
-                <div class="h-32 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=2070" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt="Video & Multimedia">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
-                </div>
-                <div class="p-6 relative z-10">
-                    <div class="w-10 h-10 bg-[#D4AF37]/10 rounded-xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
-                        <i class="fas fa-video text-lg"></i>
-                    </div>
-                    <h3 class="text-lg font-black text-white mb-1">Education & Multimedia</h3>
-                    <p class="text-slate-400 text-xs leading-relaxed mb-3">High-impact 4K video editing, reels & media production.</p>
-
-                    <!-- Sub-services -->
-                    <div class="expandable-description max-h-0 overflow-hidden transition-all duration-500 ease-in-out opacity-0">
-                        <div class="pt-4 border-t border-slate-800/80 text-left space-y-2">
-                            <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
-                                <li class="sub-service-item cursor-pointer py-1.5 select-none">
-                                    <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                        4K Video Editing & Reels <i class="fas fa-chevron-right sub-chevron text-[8px] text-slate-600"></i>
-                                    </span>
-                                    <div class="sub-expandable-explanation max-h-0 overflow-hidden transition-all duration-300 opacity-0">
-                                        <p class="pt-2 text-[11px] text-slate-400 leading-relaxed">Commercial video editing, TikTok/Reels short-form clips, and motion graphics.</p>
-                                        <div class="pt-2">
-                                            {% if user.is_authenticated %}
-                                                <a href="{% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Select in Workspace</a>
-                                            {% else %}
-                                                <a href="{% url 'account_login' %}?next={% url 'select_services' %}" class="text-[9px] bg-highlight-400 hover:bg-lime-300 text-slate-950 px-3 py-1 rounded-md font-black uppercase tracking-widest inline-block">Sign In / Register to Select</a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
 
         </div>
 
     </div>
 </section>
 
-<!-- Toggle & Authentication Check Script for Services -->
+<!-- Service Details Glassmorphic Modal -->
+<div id="serviceDetailsModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onclick="closeServiceModal()"></div>
+    <div class="bg-slate-900/95 border border-slate-800 p-8 rounded-3xl max-w-lg w-full relative z-10 mx-4 shadow-2xl transition-all duration-300">
+        <!-- Close Button -->
+        <button onclick="closeServiceModal()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+        <!-- Modal Content -->
+        <div id="modalContent" class="text-left"></div>
+    </div>
+</div>
+
+<!-- Toggle & Interactive Modal Scripts for Services -->
 <script>
-    document.querySelectorAll('#services-catalog .service-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            if (e.target.closest('a') || e.target.closest('.sub-service-item')) return;
+    let catalogCategories = [];
+    try {
+        catalogCategories = JSON.parse(document.getElementById('catalog-data').textContent);
+    } catch(e) {
+        console.error("Failed to parse catalog data JSON:", e);
+    }
 
-            const expandable = this.querySelector('.expandable-description');
-            if (!expandable) return;
-            const isOpen = expandable.style.maxHeight && expandable.style.maxHeight !== '0px';
+    function openServiceModal(categoryId) {
+        const category = catalogCategories.find(c => String(c.id) === String(categoryId));
+        if (!category) return;
+        
+        const urlsEl = document.getElementById('django-urls');
+        const isAuthenticated = urlsEl.getAttribute('data-authenticated') === 'true';
+        const selectUrl = urlsEl.getAttribute('data-select-url');
+        const loginUrl = urlsEl.getAttribute('data-login-url');
+        
+        const actionBtnHtml = isAuthenticated 
+            ? `<a href="${selectUrl}" class="text-[10px] bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-4 py-2 rounded-xl font-black uppercase tracking-widest inline-block transition">Select in Workspace</a>`
+            : `<a href="${loginUrl}" class="text-[10px] bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-4 py-2 rounded-xl font-black uppercase tracking-widest inline-block transition">Sign In to Request</a>`;
 
-            document.querySelectorAll('#services-catalog .expandable-description').forEach(otherExp => {
-                otherExp.style.maxHeight = '0px';
-                otherExp.classList.remove('opacity-100');
-                otherExp.classList.add('opacity-0');
+        let content = `
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-[#D4AF37]/10 rounded-2xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37]">
+                    <i class="${category.icon} text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-black text-white">${category.title}</h2>
+                    <p class="text-slate-400 text-xs">${category.desc}</p>
+                </div>
+            </div>
+            <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+        `;
+        
+        if (category.subservices && category.subservices.length > 0) {
+            content += `<h4 class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Available Sub-Services</h4>`;
+            category.subservices.forEach(sub => {
+                content += `
+                    <div class="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl">
+                        <h5 class="text-sm font-bold text-white mb-1">${sub.title}</h5>
+                        <p class="text-slate-400 text-xs leading-relaxed mb-3">${sub.desc}</p>
+                        ${actionBtnHtml}
+                    </div>
+                `;
             });
+        } else {
+            content += `
+                <div class="p-6 bg-slate-950/60 border border-slate-800 rounded-2xl text-center">
+                    <p class="text-slate-300 text-sm leading-relaxed mb-4">Ready to start setup and workspace delivery for this core domain.</p>
+                    ${actionBtnHtml}
+                </div>
+            `;
+        }
+        
+        content += `</div>`;
+        
+        document.getElementById('modalContent').innerHTML = content;
+        document.getElementById('serviceDetailsModal').classList.remove('hidden');
+    }
 
-            if (!isOpen) {
-                expandable.style.maxHeight = expandable.scrollHeight + 'px';
-                expandable.classList.remove('opacity-0');
-                expandable.classList.add('opacity-100');
-            }
-        });
-    });
+    function openSubServiceModal(categoryId, subServiceId) {
+        const category = catalogCategories.find(c => String(c.id) === String(categoryId));
+        if (!category) return;
+        
+        const sub = category.subservices.find(s => String(s.id) === String(subServiceId));
+        if (!sub) return;
 
-    document.querySelectorAll('#services-catalog .sub-service-item').forEach(subItem => {
-        subItem.addEventListener('click', function(e) {
-            if (e.target.closest('a')) return;
-            e.stopPropagation();
+        const urlsEl = document.getElementById('django-urls');
+        const isAuthenticated = urlsEl.getAttribute('data-authenticated') === 'true';
+        const selectUrl = urlsEl.getAttribute('data-select-url');
+        const loginUrl = urlsEl.getAttribute('data-login-url');
+        
+        const actionBtnHtml = isAuthenticated 
+            ? `<a href="${selectUrl}" class="text-xs bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-5 py-2.5 rounded-xl font-black uppercase tracking-widest inline-block transition">Select in Workspace</a>`
+            : `<a href="${loginUrl}" class="text-xs bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-5 py-2.5 rounded-xl font-black uppercase tracking-widest inline-block transition">Sign In / Register to Select</a>`;
 
-            const exp = this.querySelector('.sub-expandable-explanation');
-            const chevron = this.querySelector('.sub-chevron');
-            if (!exp) return;
-            const isOpen = exp.style.maxHeight && exp.style.maxHeight !== '0px';
-            const parentCard = this.closest('.service-card');
+        const content = `
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-[#D4AF37]/10 rounded-2xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37]">
+                    <i class="${category.icon} text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-[9px] font-black uppercase tracking-widest text-[#D4AF37]">${category.title}</span>
+                    <h2 class="text-lg font-black text-white">${sub.title}</h2>
+                </div>
+            </div>
+            <div class="space-y-6">
+                <p class="text-slate-300 text-sm leading-relaxed">${sub.desc}</p>
+                <div>
+                    ${actionBtnHtml}
+                </div>
+            </div>
+        `;
 
-            parentCard.querySelectorAll('.sub-expandable-explanation').forEach(sibExp => {
-                sibExp.style.maxHeight = '0px';
-                sibExp.classList.remove('opacity-100');
-                sibExp.classList.add('opacity-0');
-            });
-            parentCard.querySelectorAll('.sub-chevron').forEach(ch => ch.classList.remove('rotate-90'));
+        document.getElementById('modalContent').innerHTML = content;
+        document.getElementById('serviceDetailsModal').classList.remove('hidden');
+    }
 
-            if (!isOpen) {
-                exp.style.maxHeight = exp.scrollHeight + 'px';
-                exp.classList.remove('opacity-0');
-                exp.classList.add('opacity-100');
-                if (chevron) chevron.classList.add('rotate-90');
-            }
-
-            const cardExpandable = this.closest('.expandable-description');
-            if (cardExpandable) {
-                cardExpandable.style.maxHeight = 'none';
-                cardExpandable.style.maxHeight = cardExpandable.scrollHeight + 'px';
-            }
-        });
-    });
+    function closeServiceModal() {
+        document.getElementById('serviceDetailsModal').classList.add('hidden');
+    }
 </script>

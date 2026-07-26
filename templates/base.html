@@ -215,10 +215,12 @@
                 </div>
                 <div class="flex items-center space-x-6">
                     {% if user.is_authenticated %}
-                        {% if global_site_setting.phone_number %}
+                        {% if site_settings.header_phone_number %}
                             <div class="hidden lg:flex items-center space-x-2 mr-4">
-                                <i class="fas fa-phone-alt text-accent text-xs"></i>
-                                <span class="text-lg font-black text-white tracking-tight">{{ global_site_setting.phone_number }}</span>
+                                <a href="tel:{{ site_settings.header_phone_number }}" class="flex items-center space-x-2 text-slate-300 hover:text-white transition">
+                                    <i class="fas fa-phone-alt text-accent text-xs"></i>
+                                    <span class="text-lg font-black text-white tracking-tight">{{ site_settings.header_phone_number }}</span>
+                                </a>
                             </div>
                         {% endif %}
                         

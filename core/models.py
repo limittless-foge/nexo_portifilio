@@ -146,9 +146,25 @@ class SiteSetting(models.Model):
     our_story_video = models.FileField(upload_to='site_videos/', blank=True, null=True)
     our_story_image = models.ImageField(upload_to='site_images/', blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
+    education_external_url = models.URLField(
+        max_length=500, 
+        default="https://example.com", 
+        help_text="Dynamic link for Education & Multimedia card"
+    )
+    header_phone_number = models.CharField(
+        max_length=30, 
+        default="+251 968 929 372", 
+        blank=True, 
+        null=True,
+        help_text="Phone number displayed in header (Leave empty or delete to remove)"
+    )
+
+    class Meta:
+        verbose_name = "Site Setting"
+        verbose_name_plural = "Site Settings"
 
     def __str__(self):
-        return "General Site Settings"
+        return "Global Site Settings"
 
 class TeamMember(models.Model):
     name = models.CharField(max_length=100)
@@ -176,12 +192,26 @@ class TeamMember(models.Model):
 
     class Meta:
         ordering = ['order']
-
 Leader = TeamMember
 
 
+class ServiceCategory(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    icon_class = models.CharField(max_length=50, default="fas fa-cubes", help_text="FontAwesome icon class")
+    header_image = models.URLField(max_length=500, blank=True, null=True, help_text="URL to professional header image")
+    order = models.PositiveIntegerField(default=0)
+    is_external_link = models.BooleanField(default=False)
+    external_url = models.URLField(max_length=500, blank=True, null=True)
 
-class ServiceItem(models.Model):
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ['order']
+
+
+class SubService(models.Model):
     CATEGORY_CHOICES = [
         ('DESIGN', 'Graphic & Print Design'),
         ('WRITING', 'Writing & Editorial'),
@@ -191,11 +221,22 @@ class ServiceItem(models.Model):
         ('BUSINESS', 'Business Strategy & Admin'),
         ('MULTIMEDIA', 'Education & Multimedia'),
     ]
+    service_category = models.ForeignKey(ServiceCategory, on_delete=models.CASCADE, related_name='subservices', null=True, blank=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     title = models.CharField(max_length=150)
     short_explanation = models.TextField()
 
-    def __str__(self): return f"[{self.get_category_display()}] {self.title}"
+    @property
+    def name(self):
+        return self.title
+
+    def __str__(self):
+        return f"[{self.get_category_display()}] {self.title}"
+
+    class Meta:
+        db_table = 'core_serviceitem'
+
+ServiceItem = SubService
 
 
 class ClientProfile(models.Model):
@@ -214,7 +255,7 @@ class ClientProfile(models.Model):
 
     user = models.OneToOneField('auth.User', on_delete=models.CASCADE, related_name='nexo_profile')
     registration_date = models.DateTimeField(auto_now_add=True, null=True, blank=True, help_text="Tracks when the client profile/account was created")
-    selected_services = models.ManyToManyField(ServiceItem, blank=True)
+    selected_services = models.ManyToManyField('SubService', blank=True)
     chosen_tier = models.CharField(max_length=50, blank=True, null=True)
     onboarding_completed = models.BooleanField(default=False)
     project_lead_assigned = models.BooleanField(default=False, help_text="Designates if a project lead has been assigned to the client")
@@ -376,20 +417,22 @@ class ServiceAnalytics(models.Model):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MetricEntry: single source of truth for service performance analytics.
+# ClientMetricEntry: single source of truth for service performance analytics.
 # Admin enters only the DAILY value. Weekly/Monthly/Yearly totals are
 # computed automatically via Django QuerySet aggregation at query time.
 # ─────────────────────────────────────────────────────────────────────────────
-class MetricEntry(models.Model):
+class ClientMetricEntry(models.Model):
     client       = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='metric_entries',
         help_text="The client this metric belongs to."
     )
-    service_name = models.CharField(
-        max_length=120,
-        help_text="Matches the ServiceItem display name (e.g. 'Graphic & Print Design')."
+    sub_service  = models.ForeignKey(
+        SubService,
+        on_delete=models.CASCADE,
+        related_name='metric_entries',
+        help_text="The sub-service this metric belongs to."
     )
     value        = models.FloatField(
         help_text="Daily numeric value entered by the Admin (e.g. 5 videos produced)."
@@ -408,15 +451,18 @@ class MetricEntry(models.Model):
     )
 
     class Meta:
-        verbose_name        = "Metric Entry"
-        verbose_name_plural = "Metric Entries"
+        verbose_name        = "Client Metric Entry"
+        verbose_name_plural = "Client Metric Entries"
         ordering            = ['-date']
-        # Prevent duplicate entries for the same client/service/date
-        unique_together     = ('client', 'service_name', 'date')
+        db_table            = 'core_metricentry'
+        # Prevent duplicate entries for the same client/sub-service/date
+        unique_together     = ('client', 'sub_service', 'date')
         indexes = [
-            models.Index(fields=['client', 'service_name']),
+            models.Index(fields=['client', 'sub_service']),
             models.Index(fields=['date']),
         ]
 
     def __str__(self):
-        return f"{self.client.username} | {self.service_name} | {self.value} on {self.date}"
+        return f"{self.client.username} | {self.sub_service.title} | {self.value} on {self.date}"
+
+MetricEntry = ClientMetricEntry

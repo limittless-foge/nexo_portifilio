@@ -42,24 +42,16 @@
             </div>
 
             <!-- Quick Stats Bar -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-800/60">
-                <div class="text-center md:text-left">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-slate-800/60">
+                <div class="text-center sm:text-left">
                     <span class="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-1">Services Active</span>
                     <span class="text-2xl font-black text-white">{{ selected_services.count }}</span>
                 </div>
-                <div class="text-center md:text-left">
+                <div class="text-center sm:text-left">
                     <span class="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-1">Categories</span>
                     <span class="text-2xl font-black text-white">{{ grouped_services|length }}</span>
                 </div>
-                <div class="text-center md:text-left">
-                    <span class="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-1">Pricing Tier</span>
-                    {% if profile.chosen_tier %}
-                        <span class="text-2xl font-black text-accent">{{ profile.chosen_tier }}</span>
-                    {% else %}
-                        <span class="text-2xl font-black text-red-400">None</span>
-                    {% endif %}
-                </div>
-                <div class="text-center md:text-left">
+                <div class="text-center sm:text-left">
                     <span class="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-1">Status</span>
                     {% if profile.onboarding_completed %}
                         <span class="text-2xl font-black text-green-400"><i class="fas fa-check-circle text-lg mr-1"></i>Active</span>
@@ -78,11 +70,6 @@
             <!-- ─── Left Column (1 of 3): Service Account ─── -->
             <div class="lg:col-span-1">
                 <div class="glass p-8 rounded-3xl border-slate-800 relative overflow-hidden h-full">
-                    {% if profile.chosen_tier == "Professional" %}
-                    <div class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-accent/10 blur-3xl"></div>
-                    {% elif profile.chosen_tier == "Enterprise" %}
-                    <div class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-highlight-400/10 blur-3xl"></div>
-                    {% endif %}
 
                     <div class="relative">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center">
@@ -91,32 +78,6 @@
                         </h3>
 
                         <div class="space-y-6">
-                            <!-- Tier Badge -->
-                            <div>
-                                <span class="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-3">Selected Plan</span>
-                                {% if profile.chosen_tier == "Starter" %}
-                                    <div class="p-4 rounded-2xl bg-slate-800/50 border border-slate-700">
-                                        <span class="text-white text-lg font-black">Starter</span>
-                                        <p class="text-slate-400 text-[10px] mt-1 uppercase tracking-widest font-bold">Up to 2 active services</p>
-                                    </div>
-                                {% elif profile.chosen_tier == "Professional" %}
-                                    <div class="p-4 rounded-2xl bg-accent/10 border border-accent/30">
-                                        <span class="text-accent text-lg font-black">Professional</span>
-                                        <p class="text-accent/60 text-[10px] mt-1 uppercase tracking-widest font-bold">Up to 6 active services</p>
-                                    </div>
-                                {% elif profile.chosen_tier == "Enterprise" %}
-                                    <div class="p-4 rounded-2xl bg-highlight-400/10 border border-highlight-400/20">
-                                        <span class="text-highlight-400 text-lg font-black">Enterprise</span>
-                                        <p class="text-highlight-400/60 text-[10px] mt-1 uppercase tracking-widest font-bold">Unlimited active services</p>
-                                    </div>
-                                {% else %}
-                                    <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/30">
-                                        <span class="text-red-400 text-lg font-black">Not Selected</span>
-                                        <p class="text-red-400/60 text-[10px] mt-1 uppercase tracking-widest font-bold">Choose a plan to get started</p>
-                                    </div>
-                                {% endif %}
-                            </div>
-
                             <!-- Onboarding Status -->
                             <div>
                                 <span class="text-slate-500 text-[10px] font-black uppercase tracking-widest block mb-2">Onboarding Status</span>
@@ -153,15 +114,11 @@
                                 </div>
                             </div>
 
-                            <!-- Profile Settings Links / Upgrade Button -->
+                            <!-- Profile Settings Links -->
                             <div class="border-t border-slate-800/80 pt-6 space-y-3">
                                 <a href="{% url 'profile_settings' %}"
                                    class="w-full text-center inline-block py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition border border-slate-800 hover:border-slate-700">
                                     <i class="fas fa-cog mr-2"></i>Account Settings
-                                </a>
-                                <a href="{% url 'choose_pricing' %}"
-                                   class="w-full text-center inline-block py-2.5 bg-gradient-to-r from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent text-[10px] font-black uppercase tracking-widest rounded-xl transition border border-accent/20 hover:border-accent/40">
-                                    <i class="fas fa-arrow-up mr-2"></i>Change/Upgrade Tier
                                 </a>
                             </div>
                         </div>
@@ -336,7 +293,20 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             <h3 class="text-white text-base font-black tracking-tight">Active Analytics Overview</h3>
                         </div>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]"><i class="fas fa-check-circle mr-1"></i>Live feed</span>
+                        <div class="flex items-center space-x-4">
+                            <select id="analytics-time-filter" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-white text-[10px] font-black uppercase tracking-wider focus:outline-none focus:border-[#D4AF37] transition">
+                                <option value="30">Last 30 Days</option>
+                                <option value="7">Last 7 Days</option>
+                                <option value="365">This Year</option>
+                            </select>
+                            {% if user.is_superuser %}
+                            <button onclick="openMetricModal()"
+                                    class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black uppercase tracking-wider rounded-xl transition shadow-lg shadow-emerald-500/20">
+                                <i class="fas fa-plus mr-1.5"></i>Add Entry
+                            </button>
+                            {% endif %}
+                            <span class="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]"><i class="fas fa-check-circle mr-1"></i>Live feed</span>
+                        </div>
                     </div>
 
                     <!-- Loading skeleton -->
@@ -352,9 +322,62 @@
                     </div>
 
                     <!-- Actual charts (hidden until data loads) -->
-                    <div id="analytics-charts" class="w-full hidden">
-                        <div id="dynamic-services-charts-container" class="grid sm:grid-cols-2 gap-6 w-full" data-client-username="{{ profile.user.username }}">
-                            <!-- Dynamically populated via renderGraphs() -->
+                    <div id="analytics-charts" class="w-full hidden flex-1 flex flex-col justify-between" data-client-username="{{ profile.user.username }}">
+                        <div class="relative w-full h-[320px]">
+                            <canvas id="activeAnalyticsChart" class="w-full h-[320px]"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Quick Operations Row -->
+                    <div class="border-t border-slate-800/60 pt-6 mt-6">
+                        <h4 class="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-4">Quick Operations</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <!-- Action 1: Create Entry -->
+                            <button onclick="openMetricModal()" 
+                                    class="flex items-center gap-3 p-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl hover:border-emerald-500/40 hover:bg-slate-900/60 transition group text-left">
+                                <div class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition duration-300">
+                                    <i class="fas fa-plus text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-white text-xs font-bold">Create Entry</span>
+                                    <span class="block text-slate-500 text-[9px]">Add daily metrics</span>
+                                </div>
+                            </button>
+
+                            <!-- Action 2: View Catalog -->
+                            <a href="/select-services/" 
+                               class="flex items-center gap-3 p-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl hover:border-[#D4AF37]/40 hover:bg-slate-900/60 transition group text-left">
+                                <div class="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] group-hover:scale-110 transition duration-300">
+                                    <i class="fas fa-th text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-white text-xs font-bold">View Catalog</span>
+                                    <span class="block text-slate-500 text-[9px]">Browse services</span>
+                                </div>
+                            </a>
+
+                            <!-- Action 3: Service Status -->
+                            <div class="flex items-center gap-3 p-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl group">
+                                <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition duration-300">
+                                    <i class="fas fa-heartbeat text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-white text-xs font-bold">Service Status</span>
+                                    <span class="block text-emerald-400 text-[9px] font-bold">All Operational</span>
+                                </div>
+                            </div>
+
+                            <!-- Action 4: Support Desk -->
+                            <a href="{% url 'contact' %}" 
+                               class="flex items-center gap-3 p-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl hover:border-purple-500/40 hover:bg-slate-900/60 transition group text-left">
+                                <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition duration-300">
+                                    <i class="fas fa-headset text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-white text-xs font-bold">Support Desk</span>
+                                    <span class="block text-slate-500 text-[9px]">Get expert help</span>
+                                </div>
+                            </a>
                         </div>
                     </div>
 
@@ -583,362 +606,125 @@
                     { key: 'deliverables', status: data.deliverables_begin_status, id: 'lock-status-deliverables' }
                 ];
 
-                statusFields.forEach(f => {
-                    const labelEl = document.getElementById(f.id);
-                    if (labelEl) {
-                        if (f.status === 'APPROVED') {
-                            labelEl.className = 'font-bold text-emerald-400';
-                            labelEl.innerHTML = '<i class="fas fa-check mr-1"></i>Approved';
-                        } else if (f.status === 'DECLINED') {
-                            labelEl.className = 'font-bold text-red-400';
-                            labelEl.innerHTML = '<i class="fas fa-times mr-1"></i>Declined';
+                statusFields.forEach(field => {
+                    const el = document.getElementById(field.id);
+                    if (el) {
+                        if (field.status === 'APPROVED') {
+                            el.className = 'font-bold text-emerald-400';
+                            el.innerHTML = '<i class="fas fa-check mr-1"></i>Approved';
                         } else {
-                            labelEl.className = 'font-bold text-yellow-400';
-                            labelEl.innerHTML = '<i class="fas fa-clock mr-1"></i>Pending';
+                            el.className = 'font-bold text-yellow-400';
+                            el.innerHTML = '<i class="fas fa-clock mr-1"></i>Pending';
                         }
                     }
                 });
             }
 
-            // Per-service data cache: { serviceName -> { week_total, month_total, year_total, daily_points[] } }
-            const metricsCache = {};
-            let metricsCacheReady = false;
+            function hexToRgba(hex, alpha) {
+                let r = 16, g = 185, b = 129; // Default emerald
+                if (hex && hex.startsWith('#')) {
+                    const clean = hex.replace('#', '');
+                    if (clean.length === 3) {
+                        r = parseInt(clean[0]+clean[0], 16);
+                        g = parseInt(clean[1]+clean[1], 16);
+                        b = parseInt(clean[2]+clean[2], 16);
+                    } else if (clean.length === 6) {
+                        r = parseInt(clean.substring(0,2), 16);
+                        g = parseInt(clean.substring(2,4), 16);
+                        b = parseInt(clean.substring(4,6), 16);
+                    }
+                }
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
 
-            async function renderGraphs(profileId, servicesProgress) {
+            async function renderGraphs(profileId, activeSubServices) {
                 console.group('[TutorCross] renderGraphs() called');
-                console.log('servicesProgress from API:', servicesProgress);
+                console.log('activeSubServices:', activeSubServices);
 
-                // ── Step 1: Reveal chart grid, hide skeleton ──────────────────
                 const loadingEl = document.getElementById('analytics-loading');
                 const chartsEl  = document.getElementById('analytics-charts');
                 if (loadingEl) loadingEl.classList.add('hidden');
                 if (chartsEl)  chartsEl.classList.remove('hidden');
 
-                const container = document.getElementById('dynamic-services-charts-container');
-                if (!container) {
-                    console.warn('[TutorCross] #dynamic-services-charts-container not found in DOM.');
-                    console.groupEnd();
-                    return;
-                }
-
-                const clientUsername = container.getAttribute('data-client-username');
+                const clientUsername = chartsEl.getAttribute('data-client-username');
                 if (!clientUsername) {
                     console.warn('[TutorCross] data-client-username is empty — skipping fetch.');
                     console.groupEnd();
                     return;
                 }
 
-                // ── Step 2: Empty services guard ──────────────────────────────
-                if (!servicesProgress || servicesProgress.length === 0) {
-                    container.innerHTML = `
-                        <div class="col-span-2 flex flex-col items-center justify-center py-16 text-center">
-                            <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800
-                                        flex items-center justify-center mb-4">
-                                <i class="fas fa-chart-bar text-2xl text-slate-700"></i>
-                            </div>
-                            <h4 class="text-white font-bold text-sm mb-1">No Active Services</h4>
-                            <p class="text-slate-500 text-xs max-w-xs leading-relaxed">
-                                No services are allocated yet.
-                                <a href="/select-services/" class="text-[#D4AF37] underline">Browse catalog</a>.
-                            </p>
-                        </div>`;
-                    console.groupEnd();
-                    return;
-                }
-
-                // ── Step 3: Fetch from the new aggregation endpoint ───────────
+                let metricData = {};
                 try {
                     const url = `/api/metric-entries/?client_username=${encodeURIComponent(clientUsername)}`;
-                    console.log('[TutorCross] Fetching →', url);
                     const resp = await fetch(url);
                     const res  = await resp.json();
-                    console.log('[TutorCross] /api/metric-entries/ response:', res);
 
                     if (res.status === 'success' && res.data) {
-                        // Merge into local cache
-                        Object.keys(res.data).forEach(sName => {
-                            metricsCache[sName] = res.data[sName];
-                        });
-                        metricsCacheReady = true;
-                    } else {
-                        console.log('[TutorCross] No metric entries yet for this client.');
+                        metricData = res.data;
                     }
                 } catch (e) {
                     console.error('[TutorCross] Metric entries fetch failed:', e);
                 }
 
-                // ── Step 4: Build / update card shells ───────────────────────
-                const isAdmin = {{ user.is_superuser|yesno:'true,false' }};
-                const currentCards = container.querySelectorAll('.service-chart-card');
+                const allDatesSet = new Set();
+                activeSubServices.forEach(s => {
+                    const cached = metricData[s.id];
+                    if (cached && cached.daily_points) {
+                        cached.daily_points.forEach(pt => allDatesSet.add(pt.date));
+                    }
+                });
 
-                if (currentCards.length !== servicesProgress.length) {
-                    console.log('[TutorCross] Rendering', servicesProgress.length, 'service card(s)...');
-                    container.innerHTML = servicesProgress.map(s => {
-                        const safe   = s.category.replace(/[^a-zA-Z0-9]/g, '_');
-                        const cached = metricsCache[s.category];
-                        const hasData = cached && cached.daily_points && cached.daily_points.length > 0;
-
-                        const weekVal  = cached ? cached.week_total  : 0;
-                        const monthVal = cached ? cached.month_total : 0;
-                        const yearVal  = cached ? cached.year_total  : 0;
-
-                        const latestPt = hasData
-                            ? cached.daily_points[cached.daily_points.length - 1]
-                            : null;
-                        const latestText = latestPt
-                            ? `${latestPt.value} on ${latestPt.date}`
-                            : 'No entries yet';
-
-                        return `
-                            <div class="service-chart-card p-6 bg-slate-900/40 border border-slate-800/80
-                                        hover:border-[#D4AF37]/40 rounded-3xl cursor-pointer transition-all duration-300
-                                        relative overflow-hidden flex flex-col gap-4"
-                                 data-service="${s.category}"
-                                 onclick="openClientAnalyticsModal('${s.category}')">\n
-                                <div class="absolute -top-8 -right-8 w-24 h-24 rounded-full
-                                            bg-[#D4AF37]/5 blur-2xl pointer-events-none"></div>\n
-                                <!-- Header -->
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h4 class="text-white text-sm font-bold">${s.category}</h4>
-                                        <p class="text-slate-500 text-[9px] uppercase tracking-widest font-bold mt-0.5">
-                                            ${s.count} allocation${s.count !== 1 ? 's' : ''}
-                                        </p>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        ${isAdmin ? `
-                                        <button onclick="event.stopPropagation(); openAdminEntryModal('${s.category}', '${clientUsername}')"
-                                                class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20
-                                                       flex items-center justify-center hover:bg-emerald-500/25 transition"
-                                                title="Add metric entry">
-                                            <i class="fas fa-plus text-emerald-400 text-[10px]"></i>
-                                        </button>` : ''}
-                                        <div class="w-7 h-7 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
-                                            <i class="fas fa-expand-alt text-[#D4AF37] text-xs"></i>
-                                        </div>
-                                    </div>
-                                </div>\n
-                                <!-- Aggregation totals strip -->
-                                <div class="grid grid-cols-3 gap-2 text-center">
-                                    <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-800/60">
-                                        <span class="block text-[8px] uppercase tracking-wider text-slate-500 font-bold">Week</span>
-                                        <span class="block text-xs font-black ${weekVal > 0 ? 'text-[#D4AF37]' : 'text-slate-700'}"
-                                              id="week-${safe}">${weekVal || '—'}</span>
-                                    </div>
-                                    <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-800/60">
-                                        <span class="block text-[8px] uppercase tracking-wider text-slate-500 font-bold">Month</span>
-                                        <span class="block text-xs font-black ${monthVal > 0 ? 'text-[#D4AF37]' : 'text-slate-700'}"
-                                              id="month-${safe}">${monthVal || '—'}</span>
-                                    </div>
-                                    <div class="p-2 bg-slate-950/40 rounded-xl border border-slate-800/60">
-                                        <span class="block text-[8px] uppercase tracking-wider text-slate-500 font-bold">Year</span>
-                                        <span class="block text-xs font-black ${yearVal > 0 ? 'text-[#D4AF37]' : 'text-slate-700'}"
-                                              id="year-${safe}">${yearVal || '—'}</span>
-                                    </div>
-                                </div>\n
-                                <!-- Sparkline canvas or empty placeholder -->
-                                <div class="relative w-full h-24">
-                                    ${hasData
-                                        ? `<canvas id="chart-service-${safe}"></canvas>`
-                                        : `<div class="absolute inset-0 flex flex-col items-center justify-center
-                                                    rounded-xl bg-slate-950/30 border border-dashed border-slate-800">
-                                               <i class="fas fa-chart-line text-slate-700 text-lg mb-1"></i>
-                                               <span class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">No data yet</span>
-                                               ${isAdmin
-                                                   ? `<span class="text-[8px] text-slate-600 mt-0.5">Click + to add first entry</span>`
-                                                   : ''}
-                                           </div>`}
-                                </div>\n
-                                <!-- Latest entry footer -->
-                                <p class="latest-val-label text-[10px] font-black mt-auto
-                                          ${hasData ? 'text-emerald-400' : 'text-slate-600'}">
-                                    ${latestText}
-                                </p>
-                            </div>`;
-                    }).join('');
-
-                } else {
-                    // Soft update — just patch totals and labels in-place
-                    servicesProgress.forEach((s, idx) => {
-                        const safe    = s.category.replace(/[^a-zA-Z0-9]/g, '_');
-                        const cached  = metricsCache[s.category];
-                        const hasData = cached && cached.daily_points && cached.daily_points.length > 0;
-                        const card    = currentCards[idx];
-
-                        ['week','month','year'].forEach(period => {
-                            const el = document.getElementById(`${period}-${safe}`);
-                            if (el) {
-                                const val = cached ? cached[`${period}_total`] : 0;
-                                el.textContent = val || '—';
-                                el.className = `block text-xs font-black ${val > 0 ? 'text-[#D4AF37]' : 'text-slate-700'}`;
-                            }
-                        });
-
-                        const labelEl = card && card.querySelector('.latest-val-label');
-                        if (labelEl && hasData) {
-                            const latestPt = cached.daily_points[cached.daily_points.length - 1];
-                            labelEl.textContent = `${latestPt.value} on ${latestPt.date}`;
-                            labelEl.className = 'latest-val-label text-[10px] font-black mt-auto text-emerald-400';
-                        }
-                    });
+                if (allDatesSet.size === 0) {
+                    console.log('No dynamic database points found yet. Keeping default mock data.');
+                    console.groupEnd();
+                    return;
                 }
 
-                // ── Step 5: Paint sparkline charts ────────────────────────────
-                servicesProgress.forEach(s => {
-                    const safe     = s.category.replace(/[^a-zA-Z0-9]/g, '_');
-                    const canvasId = `chart-service-${safe}`;
-                    if (!document.getElementById(canvasId)) return;
+                const sortedDates = Array.from(allDatesSet).sort((a, b) => new Date(a) - new Date(b));
 
-                    const cached = metricsCache[s.category];
-                    if (!cached || !cached.daily_points || !cached.daily_points.length) return;
+                const colors = [
+                    { border: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }, // Emerald Green
+                    { border: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)' }, // Amber Yellow
+                    { border: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)' }, // Electric Blue
+                    { border: '#EC4899', background: 'rgba(236, 72, 153, 0.12)' }, // Pink
+                    { border: '#8B5CF6', background: 'rgba(139, 92, 246, 0.12)' }, // Purple
+                ];
 
-                    const pts    = [...cached.daily_points].sort((a, b) => new Date(a.date) - new Date(b.date));
-                    const labels = pts.map(p => p.date);
-                    const values = pts.map(p => p.value);
+                const datasets = activeSubServices.map((s, idx) => {
+                    const cached = metricData[s.id];
+                    const ptsMap = {};
+                    if (cached && cached.daily_points) {
+                        cached.daily_points.forEach(pt => {
+                            ptsMap[pt.date] = pt.value;
+                        });
+                    }
 
-                    console.log(`[TutorCross] Painting sparkline "${s.category}":`, { labels, values });
+                    const dataValues = sortedDates.map(d => ptsMap[d] !== undefined ? ptsMap[d] : 0);
+                    const color = colors[idx % colors.length];
 
-                    chartManager.getOrCreateChart(canvasId, 'line', {
-                        labels,
-                        datasets: [{
-                            data: values,
-                            borderColor: goldColor,
-                            backgroundColor: goldFaded,
-                            borderWidth: 1.5,
-                            pointBackgroundColor: goldColor,
-                            pointRadius: values.length > 10 ? 0 : 2,
-                            fill: true,
-                            tension: 0.35,
-                        }]
-                    }, {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                        scales:  { x: { display: false }, y: { display: false, beginAtZero: true } },
-                    });
+                    return {
+                        label: s.name,
+                        data: dataValues,
+                        borderColor: color.border,
+                        backgroundColor: color.background,
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: color.border
+                    };
                 });
+
+                if (mainChart) {
+                    mainChart.data.labels = sortedDates;
+                    mainChart.data.datasets = datasets;
+                    mainChart.update();
+                }
 
                 console.groupEnd();
             }
 
-            let activeModalService = '';
-
-            window.openClientAnalyticsModal = function(serviceName) {
-                activeModalService = serviceName;
-                document.getElementById('modal-service-title').innerHTML = `
-                    <i class="fas fa-chart-line text-[#D4AF37]"></i> ${serviceName} Performance Details
-                `;
-                
-                // Reset filter fields
-                document.getElementById('modal-analytics-period').value = '';
-                document.getElementById('modal-analytics-start').value = '';
-                document.getElementById('modal-analytics-end').value = '';
-
-                document.getElementById('client-analytics-modal').classList.remove('hidden');
-                loadModalAnalytics();
-            };
-
-            window.closeClientAnalyticsModal = function() {
-                document.getElementById('client-analytics-modal').classList.add('hidden');
-                // Event-driven graph update on modal close
-                checkAnalyticsState();
-            };
-
-            async function loadModalAnalytics() {
-                if (!activeModalService) return;
-
-                const start  = document.getElementById('modal-analytics-start').value;
-                const end    = document.getElementById('modal-analytics-end').value;
-                const clientUsername = document.getElementById('dynamic-services-charts-container')
-                                           .getAttribute('data-client-username');
-
-                const params = new URLSearchParams({ client_username: clientUsername, service_name: activeModalService });
-                if (start) params.append('start_date', start);
-                if (end)   params.append('end_date',   end);
-
-                try {
-                    const resp = await fetch(`/api/metric-entries/?${params.toString()}`);
-                    const res  = await resp.json();
-
-                    const canvasId      = 'modal-performance-chart';
-                    const listContainer = document.getElementById('modal-explanations-list');
-
-                    if (res.status !== 'success' || !res.data || !res.data[activeModalService]) {
-                        chartManager.destroyChart(canvasId);
-                        if (listContainer) {
-                            listContainer.innerHTML =
-                                '<p class="text-slate-500 text-xs italic p-4 text-center">No data points match this period.</p>';
-                        }
-                        // Update aggregation header with zeros
-                        ['modal-week-total','modal-month-total','modal-year-total'].forEach(id => {
-                            const el = document.getElementById(id);
-                            if (el) el.textContent = '0';
-                        });
-                        return;
-                    }
-
-                    const svcData = res.data[activeModalService];
-                    const pts     = [...svcData.daily_points].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                    // Update modal aggregation header
-                    const weekEl  = document.getElementById('modal-week-total');
-                    const monthEl = document.getElementById('modal-month-total');
-                    const yearEl  = document.getElementById('modal-year-total');
-                    if (weekEl)  weekEl.textContent  = svcData.week_total  || 0;
-                    if (monthEl) monthEl.textContent = svcData.month_total || 0;
-                    if (yearEl)  yearEl.textContent  = svcData.year_total  || 0;
-
-                    // Build Chart.js arrays
-                    const labels = pts.map(p => p.date);
-                    const values = pts.map(p => p.value);
-
-                    chartManager.getOrCreateChart(canvasId, 'bar', {
-                        labels,
-                        datasets: [{
-                            label: activeModalService,
-                            data: values,
-                            backgroundColor: goldFaded,
-                            borderColor: goldColor,
-                            borderWidth: 1.5,
-                            borderRadius: 4,
-                        }]
-                    }, {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: '#1e293b', borderColor: goldColor, borderWidth: 1,
-                                titleColor: goldColor, bodyColor: '#94a3b8',
-                            }
-                        },
-                        scales: {
-                            x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
-                            y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' }, beginAtZero: true },
-                        }
-                    });
-
-                    // Render daily log
-                    if (listContainer) {
-                        listContainer.innerHTML = [...pts].reverse().map(pt => `
-                            <div class="p-3 bg-slate-950/40 border border-slate-800 rounded-xl">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="text-[9px] font-bold text-[#D4AF37]">${pt.date}</span>
-                                    <span class="text-[9px] font-black text-slate-400 uppercase">${pt.value}</span>
-                                </div>
-                                <p class="text-[10.5px] text-slate-400 leading-relaxed">${pt.note || 'No note.'}</p>
-                            </div>
-                        `).join('');
-                    }
-
-                } catch (err) {
-                    console.error('[TutorCross] Failed to load modal analytics:', err);
-                }
-            }
-
-            const debouncedLoadModalAnalytics = debounce(loadModalAnalytics, 250);
-
-            // ── Helper: Fetch Active Services dynamically from DB ───────────────
             async function fetchActiveServices(clientUsername) {
                 try {
                     const resp = await fetch(`/api/active-services/?client_username=${encodeURIComponent(clientUsername)}`);
@@ -952,84 +738,22 @@
                 return [];
             }
 
-            // ── Helper: Recalculate Totals (Week/Month/Year) Locally in Browser ──
-            function recalculateTotalsLocally(serviceName) {
-                const cached = metricsCache[serviceName];
-                if (!cached || !cached.daily_points) return;
-
-                const today = new Date();
-
-                // Current week boundaries (Monday 00:00:00 to Sunday 23:59:59)
-                const day = today.getDay();
-                const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1);
-                const monday = new Date(today.setDate(diffToMonday));
-                monday.setHours(0, 0, 0, 0);
-
-                const sunday = new Date(monday);
-                sunday.setDate(monday.getDate() + 6);
-                sunday.setHours(23, 59, 59, 999);
-
-                // Current month & year boundaries
-                const now = new Date();
-                const currentYear = now.getFullYear();
-                const currentMonth = now.getMonth();
-
-                let weekSum = 0;
-                let monthSum = 0;
-                let yearSum = 0;
-
-                cached.daily_points.forEach(pt => {
-                    const ptDate = new Date(pt.date);
-                    const val = parseFloat(pt.value) || 0;
-
-                    if (ptDate >= monday && ptDate <= sunday) {
-                        weekSum += val;
-                    }
-                    if (ptDate.getFullYear() === currentYear && ptDate.getMonth() === currentMonth) {
-                        monthSum += val;
-                    }
-                    if (ptDate.getFullYear() === currentYear) {
-                        yearSum += val;
-                    }
-                });
-
-                cached.week_total  = Math.round(weekSum * 10000) / 10000;
-                cached.month_total = Math.round(monthSum * 10000) / 10000;
-                cached.year_total  = Math.round(yearSum * 10000) / 10000;
-            }
-
-            // ── Helper: Init Service Chart starting at 0 ─────────────────────────
-            window.initServiceChart = function(serviceName) {
-                if (!metricsCache[serviceName]) {
-                    metricsCache[serviceName] = {
-                        week_total: 0,
-                        month_total: 0,
-                        year_total: 0,
-                        daily_points: [{
-                            id: 'initial-zero',
-                            date: new Date().toISOString().split('T')[0],
-                            value: 0,
-                            note: 'Initialized'
-                        }]
-                    };
-                }
-            };
-
-            // ── Admin-only metric entry modal ───────────────────────────────────
-            let adminEntryService = '';
-            let adminEntryUsername = '';
-
-            // Fetch single date value from API for pre-populating
             async function fetchAdminEntryValue() {
-                const date     = document.getElementById('admin-entry-date').value;
+                const date = document.getElementById('admin-entry-date').value;
+                const selectEl = document.getElementById('admin-entry-sub-service');
                 const feedback = document.getElementById('admin-entry-feedback');
-                if (!date || !adminEntryService || !adminEntryUsername) return;
+                
+                if (!selectEl) return;
+                const subServiceId = selectEl.value;
+                const usernameEl = document.getElementById('adminEntryUsername');
+                const clientUsername = usernameEl ? usernameEl.value : '';
+                if (!date || !subServiceId || !clientUsername) return;
 
                 feedback.textContent = 'Checking existing records...';
                 feedback.className = 'text-[10px] text-slate-500 mt-2';
 
                 try {
-                    const resp = await fetch(`/api/metric-entries/?client_username=${encodeURIComponent(adminEntryUsername)}&service_name=${encodeURIComponent(adminEntryService)}&date=${date}`);
+                    const resp = await fetch(`/api/metric-entries/?client_username=${encodeURIComponent(clientUsername)}&sub_service_id=${subServiceId}&date=${date}`);
                     const res  = await resp.json();
                     if (res.status === 'success') {
                         document.getElementById('admin-entry-value').value = res.value !== 0 ? res.value : '';
@@ -1048,43 +772,37 @@
                 }
             }
 
-            window.openAdminEntryModal = function(serviceName, clientUsername) {
-                adminEntryService  = serviceName;
-                adminEntryUsername = clientUsername;
-
-                // Dynamic label logic based on service clicked
-                const serviceLabels = {
-                    'Graphic & Print Design': 'Number of Designs',
-                    'Writing & Editorial': 'Word Count',
-                    'Academic & Research Support': 'Academic Hours / Words',
-                    'Data & Tech Solutions': 'Tasks / Data Points Completed',
-                    'Web & Digital Marketing': 'Campaigns / Leads',
-                    'Business Strategy & Admin': 'Consulting Hours',
-                    'Education & Multimedia': 'Number of Videos / Media Assets'
-                };
-                const dynamicLabel = serviceLabels[serviceName] || 'Daily Value';
-                document.getElementById('admin-entry-value-label').textContent = dynamicLabel;
-
-                document.getElementById('admin-entry-service-label').textContent = serviceName;
-                document.getElementById('admin-entry-date').value  = new Date().toISOString().split('T')[0];
-                document.getElementById('admin-entry-value').value = '';
-                document.getElementById('admin-entry-note').value  = '';
-                document.getElementById('admin-entry-feedback').textContent = '';
-                document.getElementById('admin-entry-modal').classList.remove('hidden');
-                document.getElementById('admin-entry-value').focus();
-
-                fetchAdminEntryValue();
+            window.openMetricModal = function() {
+                const modal = document.getElementById('addMetricModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    const dateInput = document.getElementById('admin-entry-date');
+                    if (dateInput && !dateInput.value) {
+                        dateInput.value = new Date().toISOString().split('T')[0];
+                    }
+                    document.getElementById('admin-entry-value').value = '';
+                    document.getElementById('admin-entry-note').value = '';
+                    document.getElementById('admin-entry-feedback').textContent = '';
+                    document.getElementById('admin-entry-value').focus();
+                    fetchAdminEntryValue();
+                }
             };
 
-            window.closeAdminEntryModal = function() {
-                document.getElementById('admin-entry-modal').classList.add('hidden');
+            window.closeMetricModal = function() {
+                const modal = document.getElementById('addMetricModal');
+                if (modal) modal.classList.add('hidden');
             };
 
             window.submitAdminEntry = async function() {
+                const selectEl = document.getElementById('admin-entry-sub-service');
+                if (!selectEl) return;
+                const subServiceId = selectEl.value;
                 const value   = parseFloat(document.getElementById('admin-entry-value').value);
                 const date    = document.getElementById('admin-entry-date').value;
                 const note    = document.getElementById('admin-entry-note').value.trim();
                 const feedback = document.getElementById('admin-entry-feedback');
+                const usernameEl = document.getElementById('adminEntryUsername');
+                const clientUsername = usernameEl ? usernameEl.value : '';
 
                 if (isNaN(value)) {
                     feedback.textContent = 'Please enter a valid number.';
@@ -1106,8 +824,8 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
                         body: JSON.stringify({
-                            client_username: adminEntryUsername,
-                            service_name:   adminEntryService,
+                            client_username: clientUsername,
+                            sub_service_id:   subServiceId,
                             value,
                             date,
                             note,
@@ -1132,36 +850,8 @@
                         feedback.textContent = `✓ Saved! (${res.status})`;
                         feedback.className = 'text-[10px] text-emerald-400 mt-2';
 
-                        // Update metrics local cache immediately
-                        if (!metricsCache[adminEntryService]) {
-                            metricsCache[adminEntryService] = { week_total: 0, month_total: 0, year_total: 0, daily_points: [] };
-                        }
-                        const cached = metricsCache[adminEntryService];
-                        const existingIdx = cached.daily_points.findIndex(p => p.date === date);
-
-                        if (existingIdx >= 0) {
-                            cached.daily_points[existingIdx] = { id: res.entry.id, date, value, note };
-                        } else {
-                            cached.daily_points.push({ id: res.entry.id, date, value, note });
-                            cached.daily_points.sort((a,b) => new Date(a.date) - new Date(b.date));
-                        }
-
-                        // Local auto-calculation of Week, Month, and Year totals
-                        recalculateTotalsLocally(adminEntryService);
-
-                        // Update the last updated time stamp on the card
-                        const safe = adminEntryService.replace(/[^a-zA-Z0-9]/g, '_');
-                        
-                        // Instantly update the DOM card totals
-                        const weekEl  = document.getElementById(`week-${safe}`);
-                        const monthEl = document.getElementById(`month-${safe}`);
-                        const yearEl  = document.getElementById(`year-${safe}`);
-                        if (weekEl)  weekEl.textContent  = cached.week_total  || '—';
-                        if (monthEl) monthEl.textContent = cached.month_total || '—';
-                        if (yearEl)  yearEl.textContent  = cached.year_total  || '—';
-
                         setTimeout(() => {
-                            closeAdminEntryModal();
+                            closeMetricModal();
                             checkAnalyticsState();
                         }, 800);
                     } else {
@@ -1176,7 +866,6 @@
                 }
             };
 
-            // Helper: read CSRF token from cookie
             function getCookie(name) {
                 const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
                 return match ? decodeURIComponent(match[2]) : '';
@@ -1211,11 +900,8 @@
                         if (activeContainer) activeContainer.classList.remove('hidden');
                         if (lockedContainer) lockedContainer.classList.add('hidden');
 
-                        const clientUsername = document.getElementById('dynamic-services-charts-container').getAttribute('data-client-username');
+                        const clientUsername = document.getElementById('analytics-charts').getAttribute('data-client-username');
                         const activeServices = await fetchActiveServices(clientUsername);
-
-                        // Ensure we initialize the charts at 0 if no entries exist
-                        activeServices.forEach(s => initServiceChart(s.category));
 
                         renderGraphs(profileId, activeServices);
                     } else {
@@ -1230,42 +916,89 @@
                 }
             }
 
-            // ── Helper: Update the locked overlay status badges ─────────────────
-            function updateLockedOverlay(data) {
-                const fields = [
-                    { key: 'services',     status: data.services_selected_status,  id: 'lock-status-services'     },
-                    { key: 'team',         status: data.team_assignment_status,     id: 'lock-status-team'         },
-                    { key: 'kickoff',      status: data.kickoff_call_status,        id: 'lock-status-kickoff'      },
-                    { key: 'deliverables', status: data.deliverables_begin_status,  id: 'lock-status-deliverables' },
-                ];
-                fields.forEach(f => {
-                    const el = document.getElementById(f.id);
-                    if (!el) return;
-                    if (f.status === 'APPROVED') {
-                        el.className = 'font-bold text-emerald-400';
-                        el.innerHTML = '<i class="fas fa-check mr-1"></i>Approved';
-                    } else if (f.status === 'DECLINED') {
-                        el.className = 'font-bold text-red-400';
-                        el.innerHTML = '<i class="fas fa-times mr-1"></i>Declined';
-                    } else {
-                        el.className = 'font-bold text-yellow-400';
-                        el.innerHTML = '<i class="fas fa-clock mr-1"></i>Pending';
+            document.addEventListener('DOMContentLoaded', function () {
+                const selectEl = document.getElementById('admin-entry-sub-service');
+                const dateEl   = document.getElementById('admin-entry-date');
+                const filterEl = document.getElementById('analytics-time-filter');
+
+                if (selectEl) selectEl.addEventListener('change', fetchAdminEntryValue);
+                if (dateEl)   dateEl.addEventListener('change', fetchAdminEntryValue);
+                if (filterEl) filterEl.addEventListener('change', checkAnalyticsState);
+
+                // Pressing Enter key inside modal inputs triggers submit
+                const modalInputs = ['admin-entry-value', 'admin-entry-date', 'admin-entry-note'];
+                modalInputs.forEach(id => {
+                    const inputEl = document.getElementById(id);
+                    if (inputEl) {
+                        inputEl.addEventListener('keydown', function(event) {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                submitAdminEntry();
+                            }
+                        });
                     }
                 });
-            }
 
-            // ── Bootstrap: wire date filter listeners, run initial state check, start 3-sec background sync ─
-            document.addEventListener('DOMContentLoaded', function () {
-                // Wire the modal date filters to reload chart data when changed
-                const modalStartSelect = document.getElementById('modal-analytics-start');
-                const modalEndSelect   = document.getElementById('modal-analytics-end');
-                if (modalStartSelect) modalStartSelect.addEventListener('change', debouncedLoadModalAnalytics);
-                if (modalEndSelect)   modalEndSelect.addEventListener('change', debouncedLoadModalAnalytics);
+                // Chart.js on activeAnalyticsChart initialization
+                const ctx = document.getElementById("activeAnalyticsChart");
+                if (ctx) {
+                    mainChart = new Chart(ctx, {
+                        type: "line",
+                        data: {
+                            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                            datasets: [
+                                {
+                                    label: "Active Services Activity",
+                                    data: [12, 19, 15, 25, 22, 30, 28],
+                                    borderColor: "#10b981",
+                                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                    fill: true,
+                                    tension: 0.4,
+                                    borderWidth: 3,
+                                    pointRadius: 6,
+                                    pointHoverRadius: 8,
+                                    pointBackgroundColor: "#10b981"
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    labels: {
+                                        color: '#f8fafc',
+                                        font: { size: 11, weight: '600' }
+                                    }
+                                },
+                                tooltip: {
+                                    enabled: true,
+                                    backgroundColor: '#1e293b',
+                                    titleColor: '#10b981',
+                                    bodyColor: '#e2e8f0',
+                                    borderColor: '#334155',
+                                    borderWidth: 1
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { color: '#94a3b8' },
+                                    grid: { color: "rgba(255, 255, 255, 0.08)" }
+                                },
+                                y: {
+                                    ticks: { color: '#94a3b8' },
+                                    grid: { color: "rgba(255, 255, 255, 0.08)" },
+                                    beginAtZero: true,
+                                    stepSize: 2
+                                },
+                            },
+                        },
+                    });
+                }
 
-                // Kick off the full analytics state check
                 checkAnalyticsState();
 
-                // 3-Second Background Auto-Sync
                 if (!syncIntervalId) {
                     syncIntervalId = setInterval(checkAnalyticsState, 3000);
                 }
@@ -1274,61 +1007,12 @@
         })();
         </script>
 
-        <!-- Client Analytics Modal -->
-        <div id="client-analytics-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-            <div class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm modal-close-btn" onclick="closeClientAnalyticsModal()"></div>
-            <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-xl w-full relative z-10 mx-4 shadow-2xl">
-                <div class="flex items-center justify-between mb-6">
-                    <h4 id="modal-service-title" class="text-white text-base font-black tracking-tight flex items-center gap-2">
-                        <i class="fas fa-chart-line text-[#D4AF37]"></i> Service Performance Details
-                    </h4>
-                    <button onclick="closeClientAnalyticsModal()" class="text-slate-500 hover:text-white text-sm">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <!-- Period totals strip -->
-                <div class="grid grid-cols-3 gap-3 mb-4">
-                    <div class="p-3 bg-slate-950/50 rounded-xl border border-slate-800/60 text-center">
-                        <span class="block text-[8px] uppercase tracking-wider text-slate-500 font-bold mb-1">This Week</span>
-                        <span id="modal-week-total" class="block text-base font-black text-[#D4AF37]">—</span>
-                    </div>
-                    <div class="p-3 bg-slate-950/50 rounded-xl border border-slate-800/60 text-center">
-                        <span class="block text-[8px] uppercase tracking-wider text-slate-500 font-bold mb-1">This Month</span>
-                        <span id="modal-month-total" class="block text-base font-black text-[#D4AF37]">—</span>
-                    </div>
-                    <div class="p-3 bg-slate-950/50 rounded-xl border border-slate-800/60 text-center">
-                        <span class="block text-[8px] uppercase tracking-wider text-slate-500 font-bold mb-1">This Year</span>
-                        <span id="modal-year-total" class="block text-base font-black text-[#D4AF37]">—</span>
-                    </div>
-                </div>
-
-                <!-- Date range filters -->
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div>
-                        <label class="block text-[8px] font-black uppercase text-slate-500 tracking-wider mb-1.5">Start Date</label>
-                        <input type="date" id="modal-analytics-start" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-[#D4AF37]">
-                    </div>
-                    <div>
-                        <label class="block text-[8px] font-black uppercase text-slate-500 tracking-wider mb-1.5">End Date</label>
-                        <input type="date" id="modal-analytics-end" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-[#D4AF37]">
-                    </div>
-                </div>
-
-                <div class="relative h-60 w-full mb-6 bg-slate-950/20 rounded-2xl p-4 border border-slate-800/40">
-                    <canvas id="modal-performance-chart"></canvas>
-                </div>
-
-                <div class="max-h-36 overflow-y-auto space-y-2 border-t border-slate-800/60 pt-4" id="modal-explanations-list">
-                    <!-- Dynamically populated -->
-                </div>
-            </div>
-        </div>
-{% if user.is_superuser %}
+        {% if user.is_superuser %}
         <!-- Admin Metric Entry Modal (superuser only) -->
-        <div id="admin-entry-modal" class="fixed inset-0 z-[60] flex items-center justify-center hidden">
-            <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" onclick="closeAdminEntryModal()"></div>
+        <div id="addMetricModal" class="fixed inset-0 z-[60] flex items-center justify-center hidden">
+            <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" onclick="closeMetricModal()"></div>
             <div class="bg-slate-900 border border-slate-700 p-8 rounded-3xl max-w-sm w-full relative z-10 mx-4 shadow-2xl">
+                <input type="hidden" name="user_identifier" id="adminEntryUsername" value="{{ profile.user.username }}">
 
                 <!-- Header -->
                 <div class="flex items-center justify-between mb-6">
@@ -1336,11 +1020,20 @@
                         <h4 class="text-white text-sm font-black tracking-tight">
                             <i class="fas fa-plus-circle text-emerald-400 mr-2"></i>Add Metric Entry
                         </h4>
-                        <p id="admin-entry-service-label" class="text-[10px] text-slate-400 mt-0.5 font-bold"></p>
                     </div>
-                    <button onclick="closeAdminEntryModal()" class="text-slate-500 hover:text-white transition">
+                    <button onclick="closeMetricModal()" class="text-slate-500 hover:text-white transition">
                         <i class="fas fa-times"></i>
                     </button>
+                </div>
+
+                <!-- Active Service dropdown -->
+                <div class="mb-4">
+                    <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Select Active Service</label>
+                    <select id="admin-entry-sub-service" name="sub_service_id" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm font-bold focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30 transition">
+                        {% for service in active_sub_services %}
+                            <option value="{{ service.id }}">{{ service.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <!-- Value field -->
@@ -1360,7 +1053,7 @@
                     <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">
                         Date
                     </label>
-                    <input type="date" id="admin-entry-date"
+                    <input type="date" id="admin-entry-date" value="{% now 'Y-m-d' %}"
                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3
                                   text-white text-sm focus:outline-none focus:border-[#D4AF37]
                                   focus:ring-1 focus:ring-[#D4AF37]/30 transition">

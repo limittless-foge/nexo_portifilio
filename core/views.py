@@ -252,6 +252,7 @@ def client_dashboard(request, user_id=None):
         'grouped_services': grouped_services,
         'onboarding_step': profile.onboarding_step,
         'project_lead_assigned': profile.project_lead_assigned or (profile.assigned_lead is not None),
+        'active_sub_services': selected_services,
     })
 
 
@@ -579,18 +580,17 @@ def service_analytics_api(request):
 @csrf_exempt
 def metric_entries_api(request):
     """
-    GET  /api/metric-entries/?client_username=X[&service_name=Y][&period=week|month|year]
+    GET  /api/metric-entries/?client_username=X[&sub_service_id=Y][&period=week|month|year]
          Returns per-service aggregated totals (week / month / year) PLUS
          the ordered daily points for sparkline rendering.
 
     POST /api/metric-entries/
-         Body (JSON): { client_username, service_name, value, date, note }
-         Creates or updates the MetricEntry for that client+service+date.
+         Body (JSON): { client_username, sub_service_id, value, date, note }
+         Creates or updates the ClientMetricEntry for that client+sub_service+date.
          Superuser / staff only.
     """
-    from .models import MetricEntry
+    from .models import ClientMetricEntry, SubService
     from django.db.models import Sum
-    from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
     from django.contrib.auth.models import User
     from datetime import datetime, date as date_type
     import json
@@ -606,14 +606,14 @@ def metric_entries_api(request):
             data = request.POST.dict()
 
         client_username = data.get('client_username', '').strip()
-        service_name    = data.get('service_name', '').strip()
+        sub_service_id  = data.get('sub_service_id')
         value_raw       = data.get('value')
         date_str        = data.get('date', '').strip()
         note            = data.get('note', '').strip()
 
-        if not client_username or not service_name or value_raw is None:
+        if not client_username or not sub_service_id or value_raw is None:
             return JsonResponse(
-                {'status': 'error', 'message': 'client_username, service_name, and value are required.'},
+                {'status': 'error', 'message': 'client_username, sub_service_id, and value are required.'},
                 status=400
             )
 
@@ -622,6 +622,14 @@ def metric_entries_api(request):
         except User.DoesNotExist:
             return JsonResponse(
                 {'status': 'error', 'message': f'No user with username "{client_username}".'},
+                status=404
+            )
+
+        try:
+            sub_service = SubService.objects.get(id=sub_service_id)
+        except SubService.DoesNotExist:
+            return JsonResponse(
+                {'status': 'error', 'message': f'No sub-service with id "{sub_service_id}".'},
                 status=404
             )
 
@@ -635,9 +643,9 @@ def metric_entries_api(request):
         except ValueError:
             return JsonResponse({'status': 'error', 'message': 'date must be YYYY-MM-DD.'}, status=400)
 
-        entry, created = MetricEntry.objects.update_or_create(
+        entry, created = ClientMetricEntry.objects.update_or_create(
             client=client,
-            service_name=service_name,
+            sub_service=sub_service,
             date=entry_date,
             defaults={'value': value, 'note': note}
         )
@@ -645,19 +653,19 @@ def metric_entries_api(request):
         return JsonResponse({
             'status': 'created' if created else 'updated',
             'entry': {
-                'id':           entry.id,
-                'client':       client.username,
-                'service_name': entry.service_name,
-                'value':        entry.value,
-                'date':         entry.date.strftime('%Y-%m-%d'),
-                'note':         entry.note,
-                'last_updated': entry.last_updated.isoformat() if entry.last_updated else None
+                'id':             entry.id,
+                'client':         client.username,
+                'sub_service_id': entry.sub_service.id,
+                'value':          entry.value,
+                'date':           entry.date.strftime('%Y-%m-%d'),
+                'note':           entry.note,
+                'last_updated':   entry.last_updated.isoformat() if entry.last_updated else None
             }
         })
 
     # ── GET: Return aggregated data per service ───────────────────────────────
     client_username = request.GET.get('client_username', '').strip()
-    service_name    = request.GET.get('service_name', '').strip()
+    sub_service_id  = request.GET.get('sub_service_id')
     date_query      = request.GET.get('date', '').strip()
     start_date      = request.GET.get('start_date', '').strip()
     end_date        = request.GET.get('end_date', '').strip()
@@ -666,11 +674,11 @@ def metric_entries_api(request):
         return JsonResponse({'status': 'error', 'message': 'client_username is required.'}, status=400)
 
     # 1. State-aware single date value query for form pre-populating
-    if service_name and date_query:
+    if sub_service_id and date_query:
         try:
-            entry = MetricEntry.objects.get(
+            entry = ClientMetricEntry.objects.get(
                 client__username=client_username,
-                service_name=service_name,
+                sub_service_id=sub_service_id,
                 date=date_query
             )
             return JsonResponse({
@@ -679,7 +687,7 @@ def metric_entries_api(request):
                 'note': entry.note,
                 'last_updated': entry.last_updated.isoformat() if entry.last_updated else None
             })
-        except MetricEntry.DoesNotExist:
+        except ClientMetricEntry.DoesNotExist:
             return JsonResponse({
                 'status': 'success',
                 'value': 0.0,
@@ -688,10 +696,10 @@ def metric_entries_api(request):
             })
 
     # 2. General aggregated service metric query
-    qs = MetricEntry.objects.filter(client__username=client_username).order_by('date')
+    qs = ClientMetricEntry.objects.filter(client__username=client_username).select_related('sub_service').order_by('date')
 
-    if service_name:
-        qs = qs.filter(service_name=service_name)
+    if sub_service_id:
+        qs = qs.filter(sub_service_id=sub_service_id)
     if start_date:
         qs = qs.filter(date__gte=start_date)
     if end_date:
@@ -704,8 +712,6 @@ def metric_entries_api(request):
             'data': {}
         })
 
-    # Build per-service aggregations in a single pass through the queryset,
-    # keeping an ordered list of daily points for chart rendering.
     today = date_type.today()
 
     # Pre-compute period boundaries once
@@ -715,19 +721,21 @@ def metric_entries_api(request):
     month_start = today.replace(day=1)
     year_start  = today.replace(month=1, day=1)
 
-    service_map = {}   # { service_name: { week_total, month_total, year_total, daily_points, last_updated } }
+    service_map = {}   # { sub_service_id: { sub_service_name, week_total, month_total, year_total, daily_points, last_updated } }
 
     for entry in qs:
-        svc = entry.service_name
-        if svc not in service_map:
-            service_map[svc] = {
+        sub_svc = entry.sub_service
+        sub_svc_id = sub_svc.id
+        if sub_svc_id not in service_map:
+            service_map[sub_svc_id] = {
+                'sub_service_name': sub_svc.name,
                 'week_total':  0.0,
                 'month_total': 0.0,
                 'year_total':  0.0,
                 'daily_points': [],
                 'last_updated': None,
             }
-        rec = service_map[svc]
+        rec = service_map[sub_svc_id]
 
         # Accumulate period totals
         if week_start <= entry.date <= week_end:
@@ -755,12 +763,11 @@ def metric_entries_api(request):
 
 def get_active_services(request):
     """
-    Returns a list of unique service categories that are currently approved
+    Returns a list of active sub-services that are currently approved
     for the client. Filters by the milestone status (services_selected_status == 'APPROVED').
     """
     from django.contrib.auth.models import User
-    from django.db.models import Count
-    from .models import ClientProfile, ServiceItem
+    from .models import ClientProfile, SubService
 
     username = request.GET.get('client_username', '').strip()
     if username:
@@ -780,18 +787,12 @@ def get_active_services(request):
 
     # Only return selected services if selection is APPROVED/active
     if profile.services_selected_status == 'APPROVED':
-        active_cats = (
-            profile.selected_services.values('category')
-            .annotate(count=Count('id'))
-        )
-        categories_map = dict(ServiceItem.CATEGORY_CHOICES)
         services_list = []
-        for entry in active_cats:
-            cat_key = entry['category']
-            cat_display = categories_map.get(cat_key, cat_key)
+        for entry in profile.selected_services.all():
             services_list.append({
-                'category': cat_display,
-                'count': entry['count']
+                'id': entry.id,
+                'name': entry.name,
+                'category': entry.category
             })
         return JsonResponse({'status': 'success', 'services': services_list})
     else:
@@ -872,7 +873,9 @@ def services_page(request):
     """
     Public/Unified Services Catalog page accessible to both unauthenticated visitors and logged-in clients.
     """
-    return render(request, 'core/services.html')
+    from .models import ServiceCategory
+    categories = ServiceCategory.objects.all().prefetch_related('subservices').order_by('order')
+    return render(request, 'core/services.html', {'categories': categories})
 
 
 def experience_page(request):

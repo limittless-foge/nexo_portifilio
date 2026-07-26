@@ -3,8 +3,16 @@ from django.db.models import Sum
 from .models import (
     Review, ContactMessage, Project, ProjectCategory, Experience, ExperienceCategory,
     SiteSetting, TeamMember, ServiceItem, ClientProfile, ClientActivityLog,
-    ServiceAnalytics, MetricEntry,
+    ServiceAnalytics, MetricEntry, ServiceCategory,
 )
+
+
+@admin.register(ServiceCategory)
+class ServiceCategoryAdmin(admin.ModelAdmin):
+    list_display = ('title', 'order', 'is_external_link', 'external_url')
+    list_editable = ('is_external_link', 'external_url')
+    search_fields = ('title', 'description')
+    ordering = ('order',)
 
 
 @admin.register(ExperienceCategory)
@@ -34,24 +42,24 @@ class MetricEntryAdmin(admin.ModelAdmin):
     """
     Admin UI for the MetricEntry model.
 
-    The Admin enters only the daily VALUE for a given client + service + date.
+    The Admin enters only the daily VALUE for a given client + sub-service + date.
     Weekly / Monthly / Yearly totals are calculated on the fly by the API —
     no extra fields needed here.
     """
-    list_display  = ('client', 'service_name', 'value', 'date', 'note_preview')
-    list_filter   = ('service_name', 'date', 'client')
-    search_fields = ('client__username', 'service_name', 'note')
+    list_display  = ('client', 'sub_service', 'value', 'date', 'note_preview')
+    list_filter   = ('sub_service', 'date', 'client')
+    search_fields = ('client__username', 'sub_service__title', 'note')
     date_hierarchy = 'date'
     ordering      = ('-date',)
     readonly_fields = ('week_total_display', 'month_total_display', 'year_total_display')
 
     fieldsets = (
         ('Entry Details', {
-            'fields': ('client', 'service_name', 'value', 'date', 'note')
+            'fields': ('client', 'sub_service', 'value', 'date', 'note')
         }),
         ('Computed Totals (read-only)', {
             'classes': ('collapse',),
-            'description': 'These totals are calculated across ALL entries for this client + service.',
+            'description': 'These totals are calculated across ALL entries for this client + sub-service.',
             'fields': ('week_total_display', 'month_total_display', 'year_total_display'),
         }),
     )
@@ -65,7 +73,7 @@ class MetricEntryAdmin(admin.ModelAdmin):
         trunc_fn = {'week': TruncWeek, 'month': TruncMonth, 'year': TruncYear}[period]
         from datetime import date
         qs = MetricEntry.objects.filter(
-            client=obj.client, service_name=obj.service_name
+            client=obj.client, sub_service=obj.sub_service
         )
         if period == 'week':
             from datetime import timedelta
@@ -118,6 +126,8 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):
+    list_display = ('education_external_url', 'header_phone_number', 'phone_number')
+
     def has_add_permission(self, request):
         # Only allow one instance of SiteSetting
         return not SiteSetting.objects.exists()
@@ -132,8 +142,8 @@ class TeamMemberAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceItem)
 class ServiceItemAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category')
-    list_filter = ('category',)
+    list_display = ('title', 'category', 'service_category')
+    list_filter = ('category', 'service_category')
     search_fields = ('title', 'category')
 
 
