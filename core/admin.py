@@ -121,8 +121,10 @@ class ContactMessageAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'created_at')
-    search_fields = ('title', 'category')
+    list_display = ('title', 'category_fk', 'media_type', 'created_at')
+    list_filter = ('category_fk', 'media_type')
+    search_fields = ('title', 'category', 'category_fk__name')
+    autocomplete_fields = ('category_fk',)
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):

@@ -1,18 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 from allauth.account.forms import ChangePasswordForm
 from allauth.account.views import PasswordChangeView
 from django.contrib.auth.models import User
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
-from .models import Review, ContactMessage, Service, Project, SiteSetting, TeamMember, ServiceItem, ClientProfile, ClientActivityLog
+from .models import Review, ContactMessage, Service, Project, SiteSetting, TeamMember, ServiceItem, ClientProfile, ClientActivityLog, ProjectCategory, PhoneNumber, ServiceCategory, RoadmapStep
 from .serializers import ClientAnalyticsSerializer
-from .forms import SiteSettingForm
+from .forms import SiteSettingForm, ProjectForm
 
 def home(request):
     team_members = TeamMember.objects.all().order_by('order')
@@ -39,6 +41,12 @@ def home(request):
 
     reviews = Review.objects.all().select_related('user').order_by('-created_at')
     services = Service.objects.all().order_by('order')
+    categories = ServiceCategory.objects.all().prefetch_related('subservices').order_by('order')
+    selected_service_ids = []
+    if request.user.is_authenticated:
+        profile, _ = ClientProfile.objects.get_or_create(user=request.user)
+        selected_service_ids = list(profile.selected_services.values_list('id', flat=True))
+
     projects = Project.objects.all().order_by('-created_at')
     site_setting = SiteSetting.objects.first()
     return render(request, 'core/dashboard.html', {
@@ -47,6 +55,8 @@ def home(request):
         'projects': projects,
         'site_setting': site_setting,
         'team_members': team_members,
+        'categories': categories,
+        'selected_service_ids': selected_service_ids,
     })
 
 
@@ -96,9 +106,10 @@ def profile_settings(request):
 
 @staff_member_required
 def admin_dashboard(request):
+    ProjectCategory.ensure_standard_categories()
     users = User.objects.all().order_by('-date_joined')
     reviews = Review.objects.all().select_related('user').order_by('-created_at')
-    projects = Project.objects.all().order_by('-created_at')
+    projects = Project.objects.select_related('category_fk').all().order_by('-created_at')
     team_members = TeamMember.objects.order_by('order')
     site_setting = SiteSetting.objects.first()
     client_profiles = ClientProfile.objects.select_related('user').prefetch_related('selected_services').all().order_by('-user__date_joined')
@@ -106,31 +117,51 @@ def admin_dashboard(request):
     if not site_setting:
         site_setting = SiteSetting.objects.create()
 
-    if request.method == 'POST' and 'update_site_settings' in request.POST:
-        if 'delete_video' in request.POST:
-            if site_setting.our_story_video:
-                site_setting.our_story_video.delete(save=False)
-                site_setting.our_story_video = None
-                site_setting.save()
-            messages.success(request, "Our Story video removed successfully.")
-            return redirect('admin_dashboard')
+    project_form = ProjectForm()
+    form = SiteSettingForm(instance=site_setting)
+    if request.method == 'POST':
+        if 'update_site_settings' in request.POST:
+            if 'delete_video' in request.POST:
+                if site_setting.our_story_video:
+                    site_setting.our_story_video.delete(save=False)
+                    site_setting.our_story_video = None
+                    site_setting.save()
+                messages.success(request, "Our Story video removed successfully.")
+                return redirect('admin_panel')
 
-        if 'delete_image' in request.POST:
-            if site_setting.our_story_image:
-                site_setting.our_story_image.delete(save=False)
-                site_setting.our_story_image = None
-                site_setting.save()
-            messages.success(request, "Fallback image removed successfully.")
-            return redirect('admin_dashboard')
+            if 'delete_image' in request.POST:
+                if site_setting.our_story_image:
+                    site_setting.our_story_image.delete(save=False)
+                    site_setting.our_story_image = None
+                    site_setting.save()
+                messages.success(request, "Fallback image removed successfully.")
+                return redirect('admin_panel')
 
-        form = SiteSettingForm(request.POST, request.FILES, instance=site_setting)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Platform branding and media settings updated successfully!")
-            return redirect('admin_dashboard')
+            form = SiteSettingForm(request.POST, request.FILES, instance=site_setting)
+            if form.is_valid():
+                site_setting = form.save()
+                submitted_numbers = [
+                    value.strip() for value in request.POST.getlist('phone_numbers') if value and value.strip()
+                ]
+                site_setting.phone_numbers.all().delete()
+                for phone_number in submitted_numbers:
+                    PhoneNumber.objects.create(site_setting=site_setting, number=phone_number)
 
-    else:
-        form = SiteSettingForm(instance=site_setting)
+                site_setting.phone_number = submitted_numbers[0] if submitted_numbers else ''
+                site_setting.save(update_fields=['phone_number'])
+                messages.success(request, "Platform branding and media settings updated successfully!")
+                return redirect('admin_panel')
+        elif 'add_project' in request.POST:
+            project_form = ProjectForm(request.POST, request.FILES)
+            if project_form.is_valid():
+                project_form.save()
+                messages.success(request, "New project added to the portfolio successfully!")
+                return redirect('admin_panel')
+    
+    # Convert queryset to list and attach roadmap steps to each profile to avoid DB hits in template
+    client_profiles = list(client_profiles)
+    for profile in client_profiles:
+        profile.roadmap_steps_qs = RoadmapStep.objects.filter(client=profile.user).order_by('order')
 
     return render(request, 'core/admin_dashboard.html', {
         'users': users,
@@ -139,6 +170,7 @@ def admin_dashboard(request):
         'team_members': team_members,
         'site_setting': site_setting,
         'site_form': form,
+        'project_form': project_form,
         'client_profiles': client_profiles,
     })
 
@@ -193,6 +225,28 @@ def select_services(request):
 
 
 @login_required
+@require_POST
+def toggle_service(request, service_id):
+    service = get_object_or_404(ServiceItem, id=service_id)
+    profile, _ = ClientProfile.objects.get_or_create(user=request.user)
+
+    if profile.selected_services.filter(id=service.id).exists():
+        profile.selected_services.remove(service)
+        selected = False
+    else:
+        profile.selected_services.add(service)
+        selected = True
+    profile.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'selected': selected,
+        'active_count': profile.selected_services.count(),
+        'service_id': service.id,
+    })
+
+
+@login_required
 def choose_pricing(request):
     profile, created = ClientProfile.objects.get_or_create(user=request.user)
     if profile.onboarding_completed:
@@ -225,6 +279,18 @@ def client_dashboard(request, user_id=None):
     profile, created = ClientProfile.objects.get_or_create(user=target_user)
     selected_services = profile.selected_services.all()
 
+    # Fetch persisted roadmap steps for the target user (if any)
+    roadmap_steps = RoadmapStep.objects.filter(client=target_user).order_by('order')
+
+    # Auto-initialize default steps if none exist (useful for existing users)
+    if not roadmap_steps.exists():
+        try:
+            from .models import create_default_roadmap_steps
+            create_default_roadmap_steps(target_user)
+            roadmap_steps = RoadmapStep.objects.filter(client=target_user).order_by('order')
+        except Exception:
+            pass
+
     # Group selected services by category for organized display
     categories_map = dict(ServiceItem.CATEGORY_CHOICES)
     grouped_services = {}
@@ -234,16 +300,10 @@ def client_dashboard(request, user_id=None):
             grouped_services[cat_display] = []
         grouped_services[cat_display].append(svc)
 
-    # For standard users, treat anything that isn't 'APPROVED' as invisible (empty)
-    if not request.user.is_staff:
-        if profile.services_selected_status != 'APPROVED':
-            profile.services_selected_status = ''
-        if profile.team_assignment_status != 'APPROVED':
-            profile.team_assignment_status = ''
-        if profile.kickoff_call_status != 'APPROVED':
-            profile.kickoff_call_status = ''
-        if profile.deliverables_begin_status != 'APPROVED':
-            profile.deliverables_begin_status = ''
+    # Compute progress percent from roadmap_steps
+    total_steps = roadmap_steps.count()
+    approved_steps = roadmap_steps.filter(status='APPROVED').count()
+    progress_percent = int((approved_steps / total_steps) * 100) if total_steps > 0 else 0
 
     return render(request, 'core/client_dashboard.html', {
         'profile': profile,
@@ -253,6 +313,8 @@ def client_dashboard(request, user_id=None):
         'onboarding_step': profile.onboarding_step,
         'project_lead_assigned': profile.project_lead_assigned or (profile.assigned_lead is not None),
         'active_sub_services': selected_services,
+        'roadmap_steps': roadmap_steps,
+        'progress_percent': progress_percent,
     })
 
 
@@ -321,42 +383,119 @@ class ClientAnalyticsView(APIView):
 
 from django.http import HttpResponseForbidden, JsonResponse
 
+VALID_MILESTONE_STATUSES = {'PENDING', 'APPROVED', 'DECLINED'}
+
+
+def _resolve_milestone_field(profile, milestone_type=None):
+    if milestone_type in {'services', 'services_selected_status'}:
+        return 'services_selected_status'
+    if milestone_type in {'team', 'team_assignment_status'}:
+        return 'team_assignment_status'
+    if milestone_type in {'kickoff', 'kickoff_call_status'}:
+        return 'kickoff_call_status'
+    if milestone_type in {'deliverables', 'deliverables_begin_status'}:
+        return 'deliverables_begin_status'
+
+    if profile.onboarding_step == 1:
+        return 'services_selected_status'
+    if profile.onboarding_step == 2:
+        return 'team_assignment_status'
+    if profile.onboarding_step == 3:
+        return 'kickoff_call_status'
+    if profile.onboarding_step == 4:
+        return 'deliverables_begin_status'
+
+    return 'services_selected_status'
+
+
 def update_milestone_status(request, milestone_id, new_status):
-    # Strictly enforces that only users with request.user.is_staff set to True can execute this change
     if not request.user.is_authenticated or not request.user.is_staff:
         return HttpResponseForbidden("Forbidden: Only staff members can update milestone statuses.")
-    
-    # Load the ClientProfile model instance
-    profile = get_object_or_404(ClientProfile, id=milestone_id)
-    
-    # Support overriding step/milestone selection via type query param
-    milestone_type = request.GET.get('type')
-    
-    if milestone_type == 'services':
-        profile.services_selected_status = new_status
-    elif milestone_type == 'team':
-        profile.team_assignment_status = new_status
-    elif milestone_type == 'kickoff':
-        profile.kickoff_call_status = new_status
-    elif milestone_type == 'deliverables':
-        profile.deliverables_begin_status = new_status
-    else:
-        # Fallback to the current onboarding step if no type parameter is passed
-        if profile.onboarding_step == 1:
-            profile.services_selected_status = new_status
-        elif profile.onboarding_step == 2:
-            profile.team_assignment_status = new_status
-        elif profile.onboarding_step == 3:
-            profile.kickoff_call_status = new_status
-        elif profile.onboarding_step == 4:
-            profile.deliverables_begin_status = new_status
 
+    profile = get_object_or_404(ClientProfile, id=milestone_id)
+    milestone_type = request.GET.get('type') or request.POST.get('milestone_field')
+    normalized_status = (new_status or '').upper()
+
+    if normalized_status not in VALID_MILESTONE_STATUSES:
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+
+    field_name = _resolve_milestone_field(profile, milestone_type)
+    setattr(profile, field_name, normalized_status)
     profile.save()
-    
+
     return JsonResponse({
         'status': 'success',
-        'message': f"Milestone status updated to {new_status}.",
-        'progress': profile.onboarding_progress_percentage
+        'message': f"Milestone status updated to {normalized_status}.",
+        'progress': profile.onboarding_progress_percentage,
+        'field': field_name,
+        'new_status': normalized_status,
+    })
+
+
+@login_required
+@require_POST
+def update_roadmap_status(request, step_id):
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    profile = get_object_or_404(ClientProfile, id=step_id)
+    new_status = (request.POST.get('status') or '').upper()
+    milestone_type = request.POST.get('milestone_field') or request.POST.get('field') or request.POST.get('step_key') or request.GET.get('type')
+
+    if new_status not in VALID_MILESTONE_STATUSES:
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+
+    field_name = _resolve_milestone_field(profile, milestone_type)
+    setattr(profile, field_name, new_status)
+    profile.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'step_id': profile.id,
+        'field': field_name,
+        'new_status': new_status,
+    })
+
+
+@login_required
+@require_POST
+def update_roadmap_step_status(request, step_id):
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    step = get_object_or_404(RoadmapStep, id=step_id)
+    new_status = (request.POST.get('status') or '').upper()
+
+    if new_status in {'APPROVED', 'DECLINED'}:
+        step.status = new_status
+        step.save()
+        return JsonResponse({'status': 'success', 'new_status': step.status, 'step_id': step.id})
+
+    return JsonResponse({'error': 'Invalid status'}, status=400)
+
+
+@login_required
+@require_POST
+def toggle_roadmap_step(request, step_id):
+    step = get_object_or_404(RoadmapStep, id=step_id)
+    if request.user != step.client and not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    step.status = 'DECLINED' if step.status == 'APPROVED' else 'APPROVED'
+    step.save()
+
+    client_steps = RoadmapStep.objects.filter(client=step.client)
+    total_count = client_steps.count()
+    approved_count = client_steps.filter(status='APPROVED').count()
+    progress_percent = int((approved_count / total_count) * 100) if total_count > 0 else 0
+
+    return JsonResponse({
+        'status': 'success',
+        'step_id': step.id,
+        'new_status': step.status,
+        'progress_percent': progress_percent,
+        'approved_count': approved_count,
+        'total_count': total_count,
     })
 
 
@@ -873,31 +1012,41 @@ def services_page(request):
     """
     Public/Unified Services Catalog page accessible to both unauthenticated visitors and logged-in clients.
     """
-    from .models import ServiceCategory
     categories = ServiceCategory.objects.all().prefetch_related('subservices').order_by('order')
-    return render(request, 'core/services.html', {'categories': categories})
+    selected_service_ids = []
+    if request.user.is_authenticated:
+        profile, _ = ClientProfile.objects.get_or_create(user=request.user)
+        selected_service_ids = list(profile.selected_services.values_list('id', flat=True))
+
+    return render(request, 'core/services.html', {
+        'categories': categories,
+        'selected_service_ids': selected_service_ids,
+    })
 
 
 def experience_page(request):
     """
-    Experience page rendering Experience items grouped specifically under Video Experience and Web Experience.
-    All additions/modifications occur via Django Admin.
+    Experience page rendering Project entries grouped by the standardized ProjectCategory values.
+    This ensures the public experience showcase reflects admin-managed portfolio projects
+    and the custom Admin Command Center upload form.
     """
-    from .models import ExperienceCategory, Experience
-    categories = ExperienceCategory.objects.prefetch_related('experiences').all()
-    
-    video_category = ExperienceCategory.objects.filter(name__icontains='Video').first()
-    web_category = ExperienceCategory.objects.filter(name__icontains='Web').first()
-    
-    video_experiences = video_category.experiences.all() if video_category else Experience.objects.none()
-    web_experiences = web_category.experiences.all() if web_category else Experience.objects.none()
+    ProjectCategory.ensure_standard_categories()
+    standard_slugs = [slug for slug, _, _ in ProjectCategory.STANDARD_CATEGORIES]
+    project_categories = ProjectCategory.objects.filter(slug__in=standard_slugs).order_by('order')
+    project_groups = []
+    for category in project_categories:
+        projects = category.projects.all().order_by('-created_at')
+        if category.slug == 'video-experience':
+            for project in projects:
+                project.is_playable = bool(project.video)
+        project_groups.append({
+            'category': category,
+            'projects': projects,
+        })
 
     return render(request, 'core/experience.html', {
-        'categories': categories,
-        'video_category': video_category,
-        'web_category': web_category,
-        'video_experiences': video_experiences,
-        'web_experiences': web_experiences,
+        'project_categories': project_categories,
+        'project_groups': project_groups,
     })
 
 

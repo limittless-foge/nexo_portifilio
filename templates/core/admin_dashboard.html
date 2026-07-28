@@ -18,7 +18,7 @@
                         <h2 class="text-2xl font-bold text-white"><i class="fas fa-briefcase mr-3 text-highlight-400"></i> Portfolio Management</h2>
                         <p class="text-slate-500 text-xs mt-1 uppercase tracking-widest font-bold">Manage agency case studies and media</p>
                     </div>
-                    <a href="/admin/core/project/add/" class="px-6 py-3 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-highlight-400/10">
+                    <a href="#add-new-project" class="px-6 py-3 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-highlight-400/10">
                         <i class="fas fa-plus mr-2"></i> Add New Project
                     </a>
                 </div>
@@ -77,6 +77,76 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <div id="add-new-project" class="mt-10 p-8 rounded-3xl border border-slate-800 bg-slate-950/60">
+                    <h3 class="text-lg font-bold text-white mb-4">Add New Portfolio Project</h3>
+                    {% if project_form.errors %}
+                        <div class="mb-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200">
+                            <p class="font-bold uppercase tracking-widest text-red-300 mb-2">Please fix the following fields:</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                {% for field in project_form %}
+                                    {% for error in field.errors %}
+                                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in project_form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" enctype="multipart/form-data" class="grid lg:grid-cols-2 gap-6">
+                        {% csrf_token %}
+                        <input type="hidden" name="add_project" value="1">
+
+                        <div class="space-y-4 lg:col-span-2">
+                            <label class="block text-slate-400 text-xs uppercase tracking-widest font-black">Project Title</label>
+                            {{ project_form.title }}
+                        </div>
+
+                        <div class="space-y-4 lg:col-span-2">
+                            <label class="block text-slate-400 text-xs uppercase tracking-widest font-black">Project Category</label>
+                            {{ project_form.category_fk }}
+                        </div>
+
+                        <div class="space-y-4">
+                            <label class="block text-slate-400 text-xs uppercase tracking-widest font-black">Poster Image URL</label>
+                            {{ project_form.image_url }}
+                        </div>
+
+                        <div class="space-y-4">
+                            <label class="block text-slate-400 text-xs uppercase tracking-widest font-black">Poster Image File</label>
+                            {{ project_form.image }}
+                        </div>
+
+                        <div class="space-y-4">
+                            <label class="block text-slate-400 text-xs uppercase tracking-widest font-black">Video File</label>
+                            {{ project_form.video }}
+                        </div>
+
+                        <div class="space-y-4 lg:col-span-2">
+                            <label class="block text-slate-400 text-xs uppercase tracking-widest font-black">Short Description</label>
+                            {{ project_form.description }}
+                        </div>
+
+                        <div class="space-y-4">
+                            <label class="block text-slate-400 text-xs uppercase tracking-widest font-black">Technology Stack</label>
+                            {{ project_form.technology_stack }}
+                        </div>
+
+                        <div class="space-y-4">
+                            <label class="block text-slate-400 text-xs uppercase tracking-widest font-black">Case Study Link</label>
+                            {{ project_form.case_study_url }}
+                        </div>
+
+                        <div class="lg:col-span-2 flex justify-end">
+                            <button type="submit" class="px-10 py-4 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-sm font-black uppercase tracking-widest rounded-2xl transition shadow-xl shadow-highlight-400/20">
+                                Save Project
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -289,18 +359,54 @@
                         </div>
                     </div>
 
-                    <!-- Phone Number -->
+                    <!-- Phone Numbers -->
                     <div class="md:col-span-2 p-8 rounded-3xl border border-slate-800 bg-slate-900/30">
                         <div class="flex items-center mb-6">
                             <div class="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-400 mr-4">
                                 <i class="fas fa-phone"></i>
                             </div>
                             <div>
-                                <h3 class="text-white font-bold">Contact Phone Number</h3>
-                                <p class="text-slate-500 text-xs uppercase tracking-widest font-bold">Displayed across the platform</p>
+                                <h3 class="text-white font-bold">Contact Phone Numbers</h3>
+                                <p class="text-slate-500 text-xs uppercase tracking-widest font-bold">Add, edit, or remove numbers shown in the header</p>
                             </div>
                         </div>
-                        {{ site_form.phone_number }}
+
+                        <div class="bg-slate-900/60 p-6 rounded-2xl border border-slate-800 space-y-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                        Contact Phone Numbers
+                                    </h3>
+                                    <p class="text-xs text-slate-400">ADD, EDIT, OR REMOVE NUMBERS SHOWN IN THE HEADER</p>
+                                </div>
+                            </div>
+
+                            <div id="phone-inputs-container" class="space-y-3">
+                                {% if site_setting.phone_numbers.all %}
+                                    {% for phone in site_setting.phone_numbers.all %}
+                                        <div class="flex items-center gap-3 phone-row">
+                                            <input type="text" name="phone_numbers" value="{{ phone.number }}" placeholder="+251 000 000 000" class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400/50 transition-all">
+                                            <button type="button" onclick="removePhoneRow(this)" class="px-3.5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-xs font-bold">✕</button>
+                                        </div>
+                                    {% endfor %}
+                                {% elif site_setting.phone_number %}
+                                    <div class="flex items-center gap-3 phone-row">
+                                        <input type="text" name="phone_numbers" value="{{ site_setting.phone_number }}" placeholder="+251 000 000 000" class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400/50 transition-all">
+                                        <button type="button" onclick="removePhoneRow(this)" class="px-3.5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-xs font-bold">✕</button>
+                                    </div>
+                                {% else %}
+                                    <div class="flex items-center gap-3 phone-row">
+                                        <input type="text" name="phone_numbers" value="+25100763030" placeholder="+251 000 000 000" class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400/50 transition-all">
+                                        <button type="button" onclick="removePhoneRow(this)" class="px-3.5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-xs font-bold">✕</button>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <button type="button" id="add-phone-number-btn" onclick="addPhoneInput('+25100763030')" class="px-4 py-2 bg-slate-950 border border-dashed border-slate-700 hover:border-amber-400 text-amber-400 text-xs font-semibold rounded-xl flex items-center gap-2 transition-all">
+                                + ADD PHONE NUMBER
+                            </button>
+                        </div>
                     </div>
 
                     <div class="md:col-span-2 flex justify-end mt-4">
@@ -538,5 +644,42 @@ async function submitAddLeader() {
         btn.textContent = 'Save Team Member';
     }
 }
+</script>
+<script>
+    function addPhoneInput(defaultVal = '') {
+        const container = document.getElementById('phone-inputs-container');
+        if (!container) return;
+
+        const newRow = document.createElement('div');
+        newRow.className = 'flex items-center gap-3 phone-row';
+        newRow.innerHTML = `
+            <input type="text"
+                   name="phone_numbers"
+                   value="${defaultVal}"
+                   placeholder="+251 000 000 000"
+                   class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400/50 transition-all">
+            <button type="button"
+                    onclick="removePhoneRow(this)"
+                    class="px-3.5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-xs font-bold">
+                ✕
+            </button>
+        `;
+        container.appendChild(newRow);
+    }
+
+    function removePhoneRow(button) {
+        const row = button?.parentElement;
+        if (!row) return;
+
+        row.remove();
+
+        const container = document.getElementById('phone-inputs-container');
+        if (container && container.querySelectorAll('.phone-row').length === 0) {
+            addPhoneInput('+25100763030');
+        }
+    }
+
+    window.addPhoneInput = addPhoneInput;
+    window.removePhoneRow = removePhoneRow;
 </script>
 {% endblock %}

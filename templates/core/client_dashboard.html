@@ -134,7 +134,7 @@
                             <i class="fas fa-layer-group text-accent mr-3"></i>
                             Your Selected Services
                         </h3>
-                        <span class="bg-slate-900 border border-slate-800 text-slate-400 text-[10px] px-3.5 py-1.5 rounded-full uppercase font-black tracking-widest">
+                        <span id="active-services-count" class="active-service-count bg-slate-900 border border-slate-800 text-slate-400 text-[10px] px-3.5 py-1.5 rounded-full uppercase font-black tracking-widest">
                             {{ selected_services.count }} Active
                         </span>
                     </div>
@@ -152,7 +152,10 @@
                                 </div>
                                 <div class="grid sm:grid-cols-2 gap-4">
                                     {% for item in services %}
-                                    <div class="group p-5 bg-slate-900/40 rounded-2xl border border-slate-800/60 hover:border-accent/30 transition-all duration-300 hover:bg-slate-900/60">
+                                    <div data-service-card-id="{{ item.id }}" class="group relative p-5 bg-slate-900/40 rounded-2xl border border-slate-800/60 hover:border-accent/30 transition-all duration-300 hover:bg-slate-900/60">
+                                        <button type="button" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition" onclick="toggleSelectedService({{ item.id }})" aria-label="Remove service">
+                                            ×
+                                        </button>
                                         <div class="flex items-start space-x-4">
                                             <div class="w-9 h-9 rounded-xl bg-accent/15 border border-accent/30 text-accent flex items-center justify-center flex-shrink-0 group-hover:bg-accent/25 transition-colors duration-300">
                                                 <i class="fas fa-check text-xs"></i>
@@ -211,44 +214,43 @@
                             </div>
                         </div>
 
-                        <!-- Timeline steps -->
+                        <!-- Timeline steps (dynamic from RoadmapStep) -->
                         <div class="space-y-4" id="milestones-timeline-container">
-                            {% for milestone in profile.milestones_list %}
-                            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/35 border border-slate-850 hover:border-slate-800/80 transition-all duration-300" data-step="{{ milestone.step_number }}" data-id="{{ milestone.id }}">
+                            {% for step in roadmap_steps %}
+                            <div onclick="toggleRoadmapStep({{ step.id }})" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/35 border border-slate-850 hover:border-slate-800/80 transition-all duration-300 cursor-pointer" data-step="{{ step.order }}" data-id="{{ step.id }}" data-step-status="{{ step.status }}">
                                 <div class="flex items-start space-x-3 min-w-0">
                                     <div class="w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator
-                                        {% if milestone.status == 'APPROVED' %}
+                                        {% if step.status == 'APPROVED' %}
                                             bg-emerald-500/20 border border-emerald-500/50 text-emerald-400
                                         {% else %}
-                                            bg-slate-850 border border-slate-700 text-slate-400
+                                            bg-rose-500/10 border border-rose-500/30 text-rose-400
                                         {% endif %}"
                                     >
-                                        {% if milestone.status == 'APPROVED' %}
+                                        {% if step.status == 'APPROVED' %}
                                             <i class="fas fa-check text-[8px] milestone-check-icon"></i>
                                         {% else %}
-                                            <span class="text-[9px] font-black milestone-step-num">{{ milestone.step_number }}</span>
+                                            <i class="fas fa-times text-[8px] milestone-check-icon"></i>
                                         {% endif %}
                                     </div>
                                     <div class="min-w-0">
-                                        <h4 class="text-xs font-black milestone-title-label {% if milestone.status == 'APPROVED' %}text-emerald-400{% else %}text-slate-200{% endif %}">{{ milestone.name }}</h4>
-                                        <p class="text-slate-400 text-[10px] mt-0.5 leading-relaxed truncate">{{ milestone.description }}</p>
+                                        <h4 class="text-xs font-black milestone-title-label {% if step.status == 'APPROVED' %}text-emerald-400{% else %}text-rose-400{% endif %}">{{ step.title }}</h4>
+                                        <p class="text-slate-400 text-[10px] mt-0.5 leading-relaxed truncate">{{ step.description }}</p>
                                     </div>
                                 </div>
                                 <div class="flex-shrink-0 ml-2 milestone-action-container">
-                                    {% if milestone.status == 'APPROVED' %}
+                                    {% if step.status == 'APPROVED' %}
                                         <span class="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-wider flex items-center gap-1">
                                             <i class="fas fa-check text-[7px]"></i> APPROVED
                                         </span>
-                                    {% elif user.is_superuser %}
-                                        <form method="post" action="{% url 'approve_milestone' profile.id %}?type={{ milestone.id }}" class="inline">
-                                            {% csrf_token %}
-                                            <button type="submit" class="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[8px] font-black uppercase tracking-wider rounded transition">
-                                                Approve
-                                            </button>
-                                        </form>
+                                    {% else %}
+                                        <span class="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-black tracking-wider flex items-center gap-1">
+                                            <i class="fas fa-times text-[7px]"></i> DECLINED
+                                        </span>
                                     {% endif %}
                                 </div>
                             </div>
+                            {% empty %}
+                            <p class="text-xs text-slate-500 text-center py-4">No active onboarding steps found.</p>
                             {% endfor %}
                         </div>
 
@@ -258,24 +260,24 @@
                     <div class="mt-8 pt-6 border-t border-slate-800/80">
                         <div class="flex items-center justify-between mb-2.5">
                             <span class="text-slate-500 text-[10px] font-black uppercase tracking-widest">Progress</span>
-                            <span id="onboarding-progress-percentage-label" class="text-[10px] font-black tabular-nums text-[#D4AF37]">
-                                {{ profile.onboarding_progress_percentage|default:0 }}%
+                            <span id="onboarding-progress-percentage-label" class="text-[10px] font-black tabular-nums text-amber-400">
+                                {{ progress_percent }}%
                             </span>
                         </div>
 
                         <!-- Progress track -->
-                        <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                            <div id="onboarding-progress-bar" class="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-[#D4AF37] to-emerald-400"
-                                 style="width: {{ profile.onboarding_progress_percentage|default:0 }}%;"
-                            ></div>
+                        <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-800">
+                            <div id="onboarding-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-amber-400 transition-all duration-700"
+                                 style="width: {{ progress_percent }}%;">
+                            </div>
                         </div>
 
                         <!-- Step tick labels -->
                         <div class="flex justify-between mt-1.5" id="onboarding-step-labels">
-                            <span class="text-[8px] font-black uppercase text-emerald-400" data-progress-threshold="0">Start</span>
-                            <span class="text-[8px] font-black uppercase {% if profile.onboarding_progress_percentage >= 50 %}text-emerald-400{% else %}text-slate-700{% endif %}" data-progress-threshold="50">Team</span>
-                            <span class="text-[8px] font-black uppercase {% if profile.onboarding_progress_percentage >= 75 %}text-emerald-400{% else %}text-slate-700{% endif %}" data-progress-threshold="75">Kickoff</span>
-                            <span class="text-[8px] font-black uppercase {% if profile.onboarding_progress_percentage >= 100 %}text-emerald-400{% else %}text-slate-700{% endif %}" data-progress-threshold="100">Done</span>
+                            <span class="text-[8px] font-black uppercase {% if progress_percent >= 0 %}text-emerald-400{% else %}text-slate-700{% endif %}" data-progress-threshold="0">Start</span>
+                            <span class="text-[8px] font-black uppercase {% if progress_percent >= 50 %}text-emerald-400{% else %}text-slate-700{% endif %}" data-progress-threshold="50">Team</span>
+                            <span class="text-[8px] font-black uppercase {% if progress_percent >= 75 %}text-emerald-400{% else %}text-slate-700{% endif %}" data-progress-threshold="75">Kickoff</span>
+                            <span class="text-[8px] font-black uppercase {% if progress_percent >= 100 %}text-emerald-400{% else %}text-slate-700{% endif %}" data-progress-threshold="100">Done</span>
                         </div>
                     </div>
 
@@ -542,7 +544,9 @@
                             const title = stepEl.querySelector('.milestone-title-label');
                             const actionContainer = stepEl.querySelector('.milestone-action-container');
 
-                            if (stage.status === 'APPROVED') {
+                            const normalizedStatus = (stage.status || 'DECLINED').toUpperCase();
+
+                            if (normalizedStatus === 'APPROVED') {
                                 indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-emerald-500/20 border border-emerald-500/50 text-emerald-400';
                                 indicator.innerHTML = '<i class="fas fa-check text-[8px] milestone-check-icon"></i>';
                                 title.className = 'text-xs font-black milestone-title-label text-emerald-400';
@@ -552,22 +556,14 @@
                                     </span>
                                 `;
                             } else {
-                                indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-slate-850 border border-slate-700 text-slate-400';
-                                indicator.innerHTML = `<span class="text-[9px] font-black milestone-step-num">${stage.step}</span>`;
-                                title.className = 'text-xs font-black milestone-title-label text-slate-200';
-                                
-                                {% if user.is_superuser %}
+                                indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-rose-500/10 border border-rose-500/30 text-rose-400';
+                                indicator.innerHTML = '<i class="fas fa-times text-[8px] milestone-check-icon"></i>';
+                                title.className = 'text-xs font-black milestone-title-label text-rose-400';
                                 actionContainer.innerHTML = `
-                                    <form method="post" action="/approve/${profileId}/?type=${stage.id}" class="inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[8px] font-black uppercase tracking-wider rounded transition">
-                                            Approve
-                                        </button>
-                                    </form>
+                                    <span class="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-black tracking-wider flex items-center gap-1">
+                                        <i class="fas fa-times text-[7px]"></i> DECLINED
+                                    </span>
                                 `;
-                                {% else %}
-                                actionContainer.innerHTML = '';
-                                {% endif %}
                             }
                         }
                     });
@@ -609,11 +605,15 @@
                 statusFields.forEach(field => {
                     const el = document.getElementById(field.id);
                     if (el) {
-                        if (field.status === 'APPROVED') {
+                        const normalizedStatus = (field.status || 'PENDING').toUpperCase();
+                        if (normalizedStatus === 'APPROVED') {
                             el.className = 'font-bold text-emerald-400';
                             el.innerHTML = '<i class="fas fa-check mr-1"></i>Approved';
+                        } else if (normalizedStatus === 'DECLINED') {
+                            el.className = 'font-bold text-rose-400';
+                            el.innerHTML = '<i class="fas fa-times mr-1"></i>Declined';
                         } else {
-                            el.className = 'font-bold text-yellow-400';
+                            el.className = 'font-bold text-amber-400';
                             el.innerHTML = '<i class="fas fa-clock mr-1"></i>Pending';
                         }
                     }
@@ -871,6 +871,80 @@
                 return match ? decodeURIComponent(match[2]) : '';
             }
 
+            async function toggleRoadmapStep(stepId) {
+                const csrftoken = getCookie('csrftoken');
+                try {
+                    const resp = await fetch(`/client-dashboard/roadmap/step/${stepId}/toggle/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': csrftoken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: ``,
+                    });
+
+                    if (!resp.ok) {
+                        throw new Error(`Server returned ${resp.status}`);
+                    }
+
+                    const data = await resp.json();
+                    if (data.status !== 'success') {
+                        throw new Error(data.error || 'Unable to toggle roadmap step.');
+                    }
+
+                    updateRoadmapStepUI(data.step_id, data.new_status, data.progress_percent);
+                } catch (error) {
+                    console.error('Failed to toggle roadmap step:', error);
+                    alert('Unable to update roadmap status. Please refresh and try again.');
+                }
+            }
+
+            function updateRoadmapStepUI(stepId, status, progressPercent) {
+                const stepEl = document.querySelector(`[data-id="${stepId}"]`);
+                if (!stepEl) return;
+
+                stepEl.dataset.stepStatus = status;
+                const indicator = stepEl.querySelector('.milestone-indicator');
+                const title = stepEl.querySelector('.milestone-title-label');
+                const actionContainer = stepEl.querySelector('.milestone-action-container');
+
+                if (status === 'APPROVED') {
+                    indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-emerald-500/20 border border-emerald-500/50 text-emerald-400';
+                    indicator.innerHTML = '<i class="fas fa-check text-[8px] milestone-check-icon"></i>';
+                    title.className = 'text-xs font-black milestone-title-label text-emerald-400';
+                    actionContainer.innerHTML = `
+                        <span class="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-wider flex items-center gap-1">
+                            <i class="fas fa-check text-[7px]"></i> APPROVED
+                        </span>
+                    `;
+                } else {
+                    indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-rose-500/10 border border-rose-500/30 text-rose-400';
+                    indicator.innerHTML = '<i class="fas fa-times text-[8px] milestone-check-icon"></i>';
+                    title.className = 'text-xs font-black milestone-title-label text-rose-400';
+                    actionContainer.innerHTML = `
+                        <span class="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-black tracking-wider flex items-center gap-1">
+                            <i class="fas fa-times text-[7px]"></i> DECLINED
+                        </span>
+                    `;
+                }
+
+                const progressLabel = document.getElementById('onboarding-progress-percentage-label');
+                const progressBar = document.getElementById('onboarding-progress-bar');
+                if (progressLabel) {
+                    progressLabel.textContent = `${progressPercent}%`;
+                }
+                if (progressBar) {
+                    progressBar.style.width = `${progressPercent}%`;
+                }
+
+                const tickLabels = document.querySelectorAll('#onboarding-step-labels [data-progress-threshold]');
+                tickLabels.forEach(tick => {
+                    const threshold = parseInt(tick.dataset.progressThreshold, 10) || 0;
+                    tick.className = threshold <= progressPercent ? 'text-[8px] font-black uppercase text-emerald-400' : 'text-[8px] font-black uppercase text-slate-700';
+                });
+            }
+
             let syncIntervalId = null;
 
             async function checkAnalyticsState() {
@@ -1004,6 +1078,46 @@
                 }
             });
 
+            window.toggleSelectedService = async function(serviceId) {
+                const url = `/api/toggle-service/${serviceId}/`;
+                const csrftoken = document.cookie.match(new RegExp('(^| )csrftoken=([^;]+)'))?.[2] || '';
+
+                try {
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({}),
+                    });
+
+                    if (!resp.ok) {
+                        throw new Error(`Server returned ${resp.status}`);
+                    }
+
+                    const data = await resp.json();
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Could not update selected service.');
+                    }
+
+                    const countBadge = document.getElementById('active-services-count');
+                    if (countBadge) {
+                        countBadge.textContent = `${data.active_count} Active`;
+                    }
+
+                    const card = document.querySelector(`[data-service-card-id="${serviceId}"]`);
+                    if (card && !data.selected) {
+                        card.remove();
+                    }
+
+                } catch (error) {
+                    console.error('Failed to toggle selected service:', error);
+                    alert('Unable to update your service selection. Please refresh and try again.');
+                }
+            };
         })();
         </script>
 

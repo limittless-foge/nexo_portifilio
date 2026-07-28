@@ -7,6 +7,8 @@
               data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"
               data-select-url="{% url 'select_services' %}"
               data-login-url="{% url 'account_login' %}?next={% url 'select_services' %}"
+              data-selected-service-ids="{% if selected_service_ids %}{{ selected_service_ids|join:',' }}{% endif %}"
+              data-toggle-url-template="{% url 'toggle_service' 0 %}"
               class="hidden"></span>
 
         <!-- Catalog JSON Data -->
@@ -40,9 +42,14 @@
                 <i class="fas fa-cubes text-xs"></i>
                 <span>Nexo Solutions Catalog</span>
             </div>
-            <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
-                7 Core Service Domains
-            </h1>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 mb-4">
+                <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight">
+                    7 Core Service Domains
+                </h1>
+                <span id="selected-services-count" class="active-service-count inline-flex items-center px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-black uppercase tracking-widest">
+                    {{ selected_service_ids|length }} Selected
+                </span>
+            </div>
             <p class="text-[#D4AF37] text-sm md:text-base font-bold tracking-wider mb-2">
                 70+ Integrated Services
             </p>
@@ -58,7 +65,7 @@
             <!-- Category Card -->
             <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]"
                  {% if category.is_external_link %}
-                 onclick="window.open('{% if category.title == 'Education & Multimedia' %}{{ site_settings.education_external_url|default:category.external_url }}{% else %}{{ category.external_url }}{% endif %}', '_blank')"
+                 onclick="window.open('{% if category.title == 'Education & Multimedia' %}{{ site_settings.education_external_url|default:'#' }}{% else %}{{ category.external_url|default:'#' }}{% endif %}', '_blank')"
                  {% else %}
                  onclick="openServiceModal('{{ category.id }}')"
                  {% endif %}>
@@ -93,10 +100,11 @@
                     <div class="pt-4 border-t border-slate-850 text-left space-y-2">
                         <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
                             {% for sub in category.subservices.all|slice:":3" %}
-                            <li class="sub-service-item cursor-pointer py-1" onclick="event.stopPropagation(); openSubServiceModal('{{ category.id }}', '{{ sub.id }}')">
-                                <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition flex items-center justify-between">
-                                    {{ sub.title }} <i class="fas fa-chevron-right text-[8px] text-slate-600"></i>
-                                </span>
+                            <li class="sub-service-item cursor-pointer py-1 flex items-center justify-between" onclick="event.stopPropagation(); openSubServiceModal('{{ category.id }}', '{{ sub.id }}')">
+                                <span class="text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition truncate mr-3">{{ sub.title }}</span>
+                                <button type="button" data-subservice-id="{{ sub.id }}" onclick="event.stopPropagation(); toggleServiceSelection({{ sub.id }})" class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/20 hover:bg-[#D4AF37] hover:text-slate-950 transition">
+                                    Toggle
+                                </button>
                             </li>
                             {% endfor %}
                             {% if category.subservices.count > 3 %}
@@ -108,7 +116,7 @@
                     </div>
                     {% else %}
                     <div class="pt-4 border-t border-slate-850 text-center" onclick="event.stopPropagation();">
-                        <a href="{% if category.title == 'Education & Multimedia' %}{{ site_settings.education_external_url|default:category.external_url }}{% else %}{{ category.external_url }}{% endif %}" target="_blank" class="text-[10px] text-[#D4AF37] font-black uppercase tracking-wider flex items-center justify-center gap-1 hover:text-white transition">
+                        <a href="{% if category.title == 'Education & Multimedia' %}{{ site_settings.education_external_url|default:'#' }}{% else %}{{ category.external_url|default:'#' }}{% endif %}" target="_blank" class="text-[10px] text-[#D4AF37] font-black uppercase tracking-wider flex items-center justify-center gap-1 hover:text-white transition">
                             <i class="fas fa-external-link-alt"></i> Open external link
                         </a>
                     </div>
@@ -138,8 +146,17 @@
 <!-- Toggle & Interactive Modal Scripts for Services -->
 <script>
     let catalogCategories = [];
+    let selectedServiceIds = new Set();
+    let toggleUrlTemplate = null;
+
     try {
         catalogCategories = JSON.parse(document.getElementById('catalog-data').textContent);
+        const urlsEl = document.getElementById('django-urls');
+        if (urlsEl) {
+            const ids = urlsEl.getAttribute('data-selected-service-ids') || '';
+            selectedServiceIds = new Set(ids.split(',').filter(Boolean));
+            toggleUrlTemplate = urlsEl.getAttribute('data-toggle-url-template');
+        }
     } catch(e) {
         console.error("Failed to parse catalog data JSON:", e);
     }
@@ -149,12 +166,12 @@
         if (!category) return;
         
         const urlsEl = document.getElementById('django-urls');
-        const isAuthenticated = urlsEl.getAttribute('data-authenticated') === 'true';
-        const selectUrl = urlsEl.getAttribute('data-select-url');
-        const loginUrl = urlsEl.getAttribute('data-login-url');
-        
-        const actionBtnHtml = isAuthenticated 
-            ? `<a href="${selectUrl}" class="text-[10px] bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-4 py-2 rounded-xl font-black uppercase tracking-widest inline-block transition">Select in Workspace</a>`
+        const isAuthenticated = urlsEl ? urlsEl.getAttribute('data-authenticated') === 'true' : false;
+        const selectUrl = urlsEl ? urlsEl.getAttribute('data-select-url') : '#';
+        const loginUrl = urlsEl ? urlsEl.getAttribute('data-login-url') : '#';
+        const isCategorySelected = category.subservices.every(sub => selectedServiceIds.has(String(sub.id)));
+        const actionBtnHtml = isAuthenticated
+            ? `<button type="button" class="text-[10px] bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-4 py-2 rounded-xl font-black uppercase tracking-widest inline-flex transition" onclick="window.location.href='${selectUrl}'">Select in Workspace</button>`
             : `<a href="${loginUrl}" class="text-[10px] bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-4 py-2 rounded-xl font-black uppercase tracking-widest inline-block transition">Sign In to Request</a>`;
 
         let content = `
@@ -173,11 +190,20 @@
         if (category.subservices && category.subservices.length > 0) {
             content += `<h4 class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Available Sub-Services</h4>`;
             category.subservices.forEach(sub => {
+                const selected = selectedServiceIds.has(String(sub.id));
+                const labelText = selected ? '✓ SELECTED' : '+ SELECT SERVICE';
+                const buttonClasses = selected
+                    ? 'bg-emerald-400 text-slate-950 hover:bg-emerald-300'
+                    : 'bg-[#D4AF37] text-slate-950 hover:bg-[#B48F27]';
+                const buttonActionHtml = isAuthenticated
+                    ? `<button type="button" data-subservice-id="${sub.id}" class="text-[10px] px-4 py-2 rounded-xl font-black uppercase tracking-widest inline-flex items-center justify-center transition ${buttonClasses}" onclick="toggleServiceSelection(${sub.id})">${labelText}</button>`
+                    : `<a href="${loginUrl}" class="text-[10px] bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-4 py-2 rounded-xl font-black uppercase tracking-widest inline-block transition">Sign In to Request</a>`;
+
                 content += `
                     <div class="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl">
                         <h5 class="text-sm font-bold text-white mb-1">${sub.title}</h5>
                         <p class="text-slate-400 text-xs leading-relaxed mb-3">${sub.desc}</p>
-                        ${actionBtnHtml}
+                        ${buttonActionHtml}
                     </div>
                 `;
             });
@@ -204,12 +230,15 @@
         if (!sub) return;
 
         const urlsEl = document.getElementById('django-urls');
-        const isAuthenticated = urlsEl.getAttribute('data-authenticated') === 'true';
-        const selectUrl = urlsEl.getAttribute('data-select-url');
-        const loginUrl = urlsEl.getAttribute('data-login-url');
-        
-        const actionBtnHtml = isAuthenticated 
-            ? `<a href="${selectUrl}" class="text-xs bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-5 py-2.5 rounded-xl font-black uppercase tracking-widest inline-block transition">Select in Workspace</a>`
+        const isAuthenticated = urlsEl ? urlsEl.getAttribute('data-authenticated') === 'true' : false;
+        const loginUrl = urlsEl ? urlsEl.getAttribute('data-login-url') : '#';
+        const selected = selectedServiceIds.has(String(sub.id));
+        const labelText = selected ? '✓ SELECTED' : '+ SELECT SERVICE';
+        const buttonClasses = selected
+            ? 'bg-emerald-400 text-slate-950 hover:bg-emerald-300'
+            : 'bg-[#D4AF37] text-slate-950 hover:bg-[#B48F27]';
+        const actionBtnHtml = isAuthenticated
+            ? `<button type="button" data-subservice-id="${sub.id}" class="text-xs px-5 py-2.5 rounded-xl font-black uppercase tracking-widest inline-flex items-center justify-center transition ${buttonClasses}" onclick="toggleServiceSelection(${sub.id})">${labelText}</button>`
             : `<a href="${loginUrl}" class="text-xs bg-[#D4AF37] hover:bg-[#B48F27] text-slate-950 px-5 py-2.5 rounded-xl font-black uppercase tracking-widest inline-block transition">Sign In / Register to Select</a>`;
 
         const content = `
@@ -237,4 +266,77 @@
     function closeServiceModal() {
         document.getElementById('serviceDetailsModal').classList.add('hidden');
     }
+
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : '';
+    }
+
+    async function toggleServiceSelection(serviceId) {
+        if (!toggleUrlTemplate) {
+            console.error('Toggle URL template is not configured.');
+            return;
+        }
+
+        const url = toggleUrlTemplate.replace('0', serviceId);
+        const csrftoken = getCookie('csrftoken');
+
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'include',
+                body: JSON.stringify({}),
+            });
+
+            if (!resp.ok) {
+                throw new Error(`Server responded with ${resp.status}`);
+            }
+
+            const data = await resp.json();
+            if (data.status !== 'success') {
+                throw new Error(data.message || 'Toggle failed');
+            }
+
+            if (data.selected) {
+                selectedServiceIds.add(String(serviceId));
+            } else {
+                selectedServiceIds.delete(String(serviceId));
+            }
+
+            refreshServiceButtons();
+            refreshSelectionBadges(data.active_count);
+        } catch (error) {
+            console.error('Failed to toggle service selection:', error);
+            alert('Unable to update selection right now. Please refresh the page and try again.');
+        }
+    }
+
+    function refreshServiceButtons() {
+        document.querySelectorAll('[data-subservice-id]').forEach(button => {
+            const serviceId = String(button.getAttribute('data-subservice-id'));
+            const selected = selectedServiceIds.has(serviceId);
+            button.textContent = selected ? '✓ SELECTED' : '+ SELECT SERVICE';
+            button.classList.toggle('bg-emerald-400', selected);
+            button.classList.toggle('hover:bg-emerald-300', selected);
+            button.classList.toggle('bg-[#D4AF37]', !selected);
+            button.classList.toggle('hover:bg-[#B48F27]', !selected);
+        });
+    }
+
+    function refreshSelectionBadges(activeCount) {
+        document.querySelectorAll('.active-service-count').forEach(el => {
+            if (el.id === 'selected-services-count') {
+                el.textContent = `${activeCount} Selected`;
+            } else {
+                el.textContent = `${activeCount} Active`;
+            }
+        });
+    }
+
+    refreshServiceButtons();
 </script>

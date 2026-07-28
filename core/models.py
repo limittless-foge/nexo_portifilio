@@ -56,7 +56,15 @@ class Service(models.Model):
         ordering = ['order']
 
 class ProjectCategory(models.Model):
-    name = models.CharField(max_length=100, unique=True, help_text="Dynamic project category e.g. Video, Web, Design")
+    STANDARD_CATEGORIES = [
+        ('video-experience', 'Video Experience', 0),
+        ('web-experience', 'Web Experience', 1),
+        ('design', 'Design & Creative', 2),
+        ('marketing', 'Marketing & Strategy', 3),
+        ('data-tech', 'Data & Tech Solutions', 4),
+    ]
+
+    name = models.CharField(max_length=100, unique=True, help_text="Project category name")
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     order = models.PositiveIntegerField(default=0)
 
@@ -74,10 +82,28 @@ class ProjectCategory(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+    @classmethod
+    def ensure_standard_categories(cls):
+        for slug, name, order in cls.STANDARD_CATEGORIES:
+            category, created = cls.objects.get_or_create(
+                slug=slug,
+                defaults={'name': name, 'order': order}
+            )
+            if not created and (category.name != name or category.order != order):
+                category.name = name
+                category.order = order
+                category.save(update_fields=['name', 'order'])
+
 class Project(models.Model):
     title = models.CharField(max_length=100)
     category = models.CharField(max_length=50, blank=True)
     category_fk = models.ForeignKey(ProjectCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='projects')
+    MEDIA_TYPE_CHOICES = [
+        ('VIDEO', 'Video'),
+        ('IMAGE', 'Image'),
+        ('OTHER', 'Other'),
+    ]
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, default='OTHER')
     image_url = models.URLField(max_length=500, blank=True, null=True) # Keeping for legacy/external links
     image = models.ImageField(upload_to="project_images/", null=True, blank=True)
     video = models.FileField(upload_to="project_videos/", null=True, blank=True)
@@ -91,6 +117,15 @@ class Project(models.Model):
         if self.category_fk:
             return self.category_fk.name
         return self.category or "General"
+
+    def save(self, *args, **kwargs):
+        if self.video:
+            self.media_type = 'VIDEO'
+        elif self.image or self.image_url:
+            self.media_type = 'IMAGE'
+        else:
+            self.media_type = self.media_type or 'OTHER'
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
@@ -142,6 +177,18 @@ class Experience(models.Model):
         return f"[{self.category.name}] {self.title}"
 
 
+class PhoneNumber(models.Model):
+    site_setting = models.ForeignKey('SiteSetting', related_name='phone_numbers', on_delete=models.CASCADE)
+    number = models.CharField(max_length=30)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.number
+
+    class Meta:
+        ordering = ['created_at']
+
+
 class SiteSetting(models.Model):
     our_story_video = models.FileField(upload_to='site_videos/', blank=True, null=True)
     our_story_image = models.ImageField(upload_to='site_images/', blank=True, null=True)
@@ -166,6 +213,20 @@ class SiteSetting(models.Model):
     def __str__(self):
         return "Global Site Settings"
 
+    @classmethod
+    def get_instance(cls):
+        """Return the single SiteSetting instance, creating it with defaults if needed."""
+        instance = cls.objects.first()
+        if instance:
+            return instance
+        # Create with defaults from field definitions
+        defaults = {}
+        for field in cls._meta.fields:
+            if field.has_default():
+                # call default if callable
+                defaults[field.name] = field.get_default()
+        instance = cls.objects.create(**{k: v for k, v in defaults.items() if k != 'id'})
+        return instance
 class TeamMember(models.Model):
     name = models.CharField(max_length=100)
     job_role = models.CharField(max_length=100)
@@ -250,12 +311,12 @@ class ClientProfile(models.Model):
     STAGE_STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('APPROVED', 'Approved'),
-        ('DECLINED', 'Declined'),
+        ('DECLINED', 'Declined / Restricted'),
     ]
 
     user = models.OneToOneField('auth.User', on_delete=models.CASCADE, related_name='nexo_profile')
     registration_date = models.DateTimeField(auto_now_add=True, null=True, blank=True, help_text="Tracks when the client profile/account was created")
-    selected_services = models.ManyToManyField('SubService', blank=True)
+    selected_services = models.ManyToManyField('SubService', blank=True, related_name='selected_by_clients')
     chosen_tier = models.CharField(max_length=50, blank=True, null=True)
     onboarding_completed = models.BooleanField(default=False)
     project_lead_assigned = models.BooleanField(default=False, help_text="Designates if a project lead has been assigned to the client")
@@ -275,25 +336,25 @@ class ClientProfile(models.Model):
 
     # Roadmap Stage Validation Statuses
     services_selected_status = models.CharField(
-        max_length=15,
+        max_length=20,
         choices=STAGE_STATUS_CHOICES,
         default='PENDING',
         help_text="Status of the services selection step"
     )
     team_assignment_status = models.CharField(
-        max_length=15,
+        max_length=20,
         choices=STAGE_STATUS_CHOICES,
         default='PENDING',
         help_text="Status of the team assignment step"
     )
     kickoff_call_status = models.CharField(
-        max_length=15,
+        max_length=20,
         choices=STAGE_STATUS_CHOICES,
         default='PENDING',
         help_text="Status of the kickoff call step"
     )
     deliverables_begin_status = models.CharField(
-        max_length=15,
+        max_length=20,
         choices=STAGE_STATUS_CHOICES,
         default='PENDING',
         help_text="Status of the deliverables beginning step"
@@ -356,6 +417,59 @@ class ClientProfile(models.Model):
 
     def __str__(self):
         return f"Profile of {self.user.username}"
+
+
+class RoadmapStep(models.Model):
+    STATUS_CHOICES = [
+        ('APPROVED', 'Approved'),
+        ('DECLINED', 'Declined'),
+    ]
+
+    title = models.CharField(max_length=100)
+    description = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DECLINED')
+    client = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='roadmap_steps')
+    order = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.title} ({self.get_status_display()}) for {self.client.username}"
+
+
+# Default roadmap steps used to initialize new client profiles
+DEFAULT_ROADMAP_STEPS = [
+    {'title': 'Services Selected', 'description': 'Service catalog confirmed', 'order': 1},
+    {'title': 'Team Assignment', 'description': 'Project lead allocation', 'order': 2},
+    {'title': 'Kickoff Call', 'description': 'Initial roadmap mapping', 'order': 3},
+    {'title': 'Deliverables Begin', 'description': 'Execution and delivery start', 'order': 4},
+]
+
+
+def create_default_roadmap_steps(user):
+    """Create the standard onboarding roadmap steps for a given user if they don't exist."""
+    for step in DEFAULT_ROADMAP_STEPS:
+        RoadmapStep.objects.get_or_create(
+            client=user,
+            title=step['title'],
+            defaults={
+                'description': step.get('description', ''),
+                'order': step.get('order', 1),
+                'status': 'DECLINED',
+            }
+        )
+
+
+@receiver(post_save, sender=ClientProfile)
+def ensure_roadmap_steps_for_profile(sender, instance, created, **kwargs):
+    """Ensure default roadmap steps exist whenever a ClientProfile is created."""
+    if created:
+        try:
+            create_default_roadmap_steps(instance.user)
+        except Exception:
+            # Do not raise during signal handling; log silently in production
+            pass
 
 
 class ClientActivityLog(models.Model):
