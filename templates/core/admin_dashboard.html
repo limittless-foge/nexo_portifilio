@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Admin Command Center | NEXO{% endblock %}
+{% block title %}Admin Command Center | WISDOM TOWER{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-slate-950 py-24 px-4 sm:px-6 lg:px-8">
@@ -309,7 +309,7 @@
                     </div>
                 </div>
 
-                <form method="POST" enctype="multipart/form-data" class="grid md:grid-cols-2 gap-8">
+                <form id="branding-assets-form" action="{% url 'update_branding_assets' %}" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-2 gap-8">
                     {% csrf_token %}
                     <input type="hidden" name="update_site_settings" value="1">
                     
@@ -359,55 +359,7 @@
                         </div>
                     </div>
 
-                    <!-- Phone Numbers -->
-                    <div class="md:col-span-2 p-8 rounded-3xl border border-slate-800 bg-slate-900/30">
-                        <div class="flex items-center mb-6">
-                            <div class="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-400 mr-4">
-                                <i class="fas fa-phone"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-white font-bold">Contact Phone Numbers</h3>
-                                <p class="text-slate-500 text-xs uppercase tracking-widest font-bold">Add, edit, or remove numbers shown in the header</p>
-                            </div>
-                        </div>
 
-                        <div class="bg-slate-900/60 p-6 rounded-2xl border border-slate-800 space-y-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <div>
-                                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                                        Contact Phone Numbers
-                                    </h3>
-                                    <p class="text-xs text-slate-400">ADD, EDIT, OR REMOVE NUMBERS SHOWN IN THE HEADER</p>
-                                </div>
-                            </div>
-
-                            <div id="phone-inputs-container" class="space-y-3">
-                                {% if site_setting.phone_numbers.all %}
-                                    {% for phone in site_setting.phone_numbers.all %}
-                                        <div class="flex items-center gap-3 phone-row">
-                                            <input type="text" name="phone_numbers" value="{{ phone.number }}" placeholder="+251 000 000 000" class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400/50 transition-all">
-                                            <button type="button" onclick="removePhoneRow(this)" class="px-3.5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-xs font-bold">✕</button>
-                                        </div>
-                                    {% endfor %}
-                                {% elif site_setting.phone_number %}
-                                    <div class="flex items-center gap-3 phone-row">
-                                        <input type="text" name="phone_numbers" value="{{ site_setting.phone_number }}" placeholder="+251 000 000 000" class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400/50 transition-all">
-                                        <button type="button" onclick="removePhoneRow(this)" class="px-3.5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-xs font-bold">✕</button>
-                                    </div>
-                                {% else %}
-                                    <div class="flex items-center gap-3 phone-row">
-                                        <input type="text" name="phone_numbers" value="+25100763030" placeholder="+251 000 000 000" class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400/50 transition-all">
-                                        <button type="button" onclick="removePhoneRow(this)" class="px-3.5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-xs font-bold">✕</button>
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <button type="button" id="add-phone-number-btn" onclick="addPhoneInput('+25100763030')" class="px-4 py-2 bg-slate-950 border border-dashed border-slate-700 hover:border-amber-400 text-amber-400 text-xs font-semibold rounded-xl flex items-center gap-2 transition-all">
-                                + ADD PHONE NUMBER
-                            </button>
-                        </div>
-                    </div>
 
                     <div class="md:col-span-2 flex justify-end mt-4">
                         <button type="submit" class="px-10 py-4 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-sm font-black uppercase tracking-widest rounded-2xl transition shadow-xl shadow-highlight-400/20">
@@ -529,7 +481,7 @@
         <div class="space-y-4">
             <div>
                 <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Full Name</label>
-                <input type="text" id="leader-name" placeholder="e.g. Marcus Nexo"
+                <input type="text" id="leader-name" placeholder="e.g. Marcus Wisdom"
                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-highlight-400">
             </div>
 
@@ -546,9 +498,10 @@
             </div>
 
             <div>
-                <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Avatar Image URL (Cloudinary or Direct Link)</label>
-                <input type="url" id="leader-image-url" placeholder="https://images.unsplash.com/photo-..."
-                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-highlight-400">
+                <label class="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Avatar Photo (Local File Upload)</label>
+                <input type="file" id="leader-avatar-file" accept="image/*"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-highlight-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-black file:uppercase file:bg-highlight-400/20 file:text-highlight-400 hover:file:bg-highlight-400/30 cursor-pointer">
+                <p id="leader-avatar-preview-label" class="text-[10px] text-slate-600 mt-1">Upload a portrait or headshot photo.</p>
             </div>
 
             <div>
@@ -573,7 +526,7 @@ function openAddLeaderModal() {
     document.getElementById('leader-name').value = '';
     document.getElementById('leader-role').value = '';
     document.getElementById('leader-bio').value = '';
-    document.getElementById('leader-image-url').value = '';
+    document.getElementById('leader-avatar-file').value = '';
     document.getElementById('leader-order').value = '0';
     document.getElementById('leader-modal-title').innerHTML = '<i class="fas fa-crown text-highlight-400"></i> Add New Team Leader';
     document.getElementById('leader-feedback').textContent = '';
@@ -586,10 +539,13 @@ function openEditLeaderModal(id, name, role, bio, image_url, order) {
     document.getElementById('leader-name').value = name;
     document.getElementById('leader-role').value = role;
     document.getElementById('leader-bio').value = bio;
-    document.getElementById('leader-image-url').value = image_url;
+    document.getElementById('leader-avatar-file').value = '';
     document.getElementById('leader-order').value = order;
     document.getElementById('leader-modal-title').innerHTML = '<i class="fas fa-edit text-highlight-400"></i> Edit Team Leader';
     document.getElementById('leader-feedback').textContent = '';
+    // Show existing image name as hint if present
+    const previewLabel = document.getElementById('leader-avatar-preview-label');
+    if (previewLabel) previewLabel.textContent = image_url ? 'Current avatar already set. Upload new file to replace.' : 'Upload a portrait or headshot photo.';
     document.getElementById('add-leader-modal').classList.remove('hidden');
     document.getElementById('leader-name').focus();
 }
@@ -603,7 +559,7 @@ async function submitAddLeader() {
     const name = document.getElementById('leader-name').value.trim();
     const job_role = document.getElementById('leader-role').value.trim();
     const bio = document.getElementById('leader-bio').value.trim();
-    const image_url = document.getElementById('leader-image-url').value.trim();
+    const avatarFileInput = document.getElementById('leader-avatar-file');
     const order = document.getElementById('leader-order').value;
     const feedback = document.getElementById('leader-feedback');
     const btn = document.getElementById('leader-submit-btn');
@@ -618,10 +574,30 @@ async function submitAddLeader() {
     btn.textContent = 'Saving…';
 
     try {
+        // Use FormData so the avatar file is included in the upload
+        const formData = new FormData();
+        if (id) formData.append('id', id);
+        formData.append('name', name);
+        formData.append('job_role', job_role);
+        formData.append('bio', bio);
+        formData.append('order', order);
+        if (avatarFileInput && avatarFileInput.files[0]) {
+            formData.append('avatar', avatarFileInput.files[0]);
+        }
+        // CSRF token from cookie
+        function getCsrfToken() {
+            const name = 'csrftoken';
+            const cookies = document.cookie.split(';');
+            for (let c of cookies) {
+                c = c.trim();
+                if (c.startsWith(name + '=')) return decodeURIComponent(c.slice(name.length + 1));
+            }
+            return '';
+        }
         const resp = await fetch('/api/team/add/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, name, job_role, bio, image_url, order })
+            headers: { 'X-CSRFToken': getCsrfToken() },
+            body: formData
         });
         const res = await resp.json();
 
@@ -644,42 +620,81 @@ async function submitAddLeader() {
         btn.textContent = 'Save Team Member';
     }
 }
-</script>
-<script>
-    function addPhoneInput(defaultVal = '') {
-        const container = document.getElementById('phone-inputs-container');
-        if (!container) return;
 
-        const newRow = document.createElement('div');
-        newRow.className = 'flex items-center gap-3 phone-row';
-        newRow.innerHTML = `
-            <input type="text"
-                   name="phone_numbers"
-                   value="${defaultVal}"
-                   placeholder="+251 000 000 000"
-                   class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400/50 transition-all">
-            <button type="button"
-                    onclick="removePhoneRow(this)"
-                    class="px-3.5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-xs font-bold">
-                ✕
-            </button>
-        `;
-        container.appendChild(newRow);
-    }
 
-    function removePhoneRow(button) {
-        const row = button?.parentElement;
-        if (!row) return;
-
-        row.remove();
-
-        const container = document.getElementById('phone-inputs-container');
-        if (container && container.querySelectorAll('.phone-row').length === 0) {
-            addPhoneInput('+25100763030');
+    // Toast notification creator
+    function showToast(message) {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed bottom-5 right-5 z-50 space-y-3 pointer-events-none';
+            document.body.appendChild(container);
         }
+        
+        const toast = document.createElement('div');
+        toast.className = 'p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center shadow-2xl backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto max-w-sm';
+        toast.style.boxShadow = '0 10px 30px -10px rgba(16, 185, 129, 0.2)';
+        toast.innerHTML = `
+            <i class="fas fa-check-circle mr-2.5 text-sm text-emerald-400"></i>
+            <span>${message}</span>
+        `;
+        
+        container.appendChild(toast);
+        
+        // animate in
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-y-2', 'opacity-0');
+        });
+        
+        // animate out and remove
+        setTimeout(() => {
+            toast.classList.add('translate-y-2', 'opacity-0');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
     }
 
-    window.addPhoneInput = addPhoneInput;
-    window.removePhoneRow = removePhoneRow;
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const brandingForm = document.getElementById('branding-assets-form');
+        if (brandingForm) {
+            brandingForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(brandingForm);
+                
+                fetch(brandingForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: formData
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Network error or server returned status ' + res.status);
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Display confirmation toast
+                        showToast('Branding assets updated successfully!');
+                    } else {
+                        alert('Failed to update: ' + JSON.stringify(data.errors || 'Unknown error'));
+                    }
+                })
+                .catch(err => {
+                    console.error('AJAX update failed, falling back to standard submit:', err);
+                    brandingForm.submit();
+                });
+            });
+        }
+    });
+
 </script>
 {% endblock %}

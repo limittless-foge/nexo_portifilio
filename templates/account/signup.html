@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load socialaccount %}
 
-{% block title %}Sign Up | NEXO{% endblock %}
+{% block title %}Sign Up | WISDOM TOWER{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-950 relative overflow-hidden">
@@ -12,17 +12,28 @@
     </div>
 
     <div class="max-w-md w-full relative z-10">
-        <!-- Brand Logo -->
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-black tracking-tighter text-white">NEXO<span class="text-highlight-400">.</span></h1>
-            <p class="text-slate-500 text-xs uppercase tracking-[0.2em] font-bold mt-2">Digital Intelligence</p>
+        <div class="text-center mb-10 flex flex-col items-center justify-center">
+            <a href="{% url 'home' %}" class="flex flex-col items-center gap-3 group">
+                <img src="{% static 'images/wisdom_tower_logo.png' %}" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" 
+                     alt="WISDOM TOWER" 
+                     class="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
+                <div class="hidden flex-col items-center gap-3">
+                    <svg class="w-12 h-12 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="6" y="8" width="4" height="20" fill="currentColor"/>
+                        <rect x="14" y="14" width="4" height="14" fill="currentColor"/>
+                        <circle cx="16" cy="9" r="2.5" fill="#00C2FF"/>
+                    </svg>
+                    <h1 class="text-2xl font-black text-white tracking-wider uppercase">WISDOM <span class="text-slate-400">TOWER</span></h1>
+                </div>
+            </a>
         </div>
 
         <!-- Glass Card -->
         <div class="bg-slate-900/50 backdrop-blur-xl p-10 rounded-[2rem] border border-slate-800 shadow-2xl">
             <div class="mb-8">
                 <h2 class="text-2xl font-bold text-white">Create Identity</h2>
-                <p class="text-slate-400 text-sm mt-1">Join the NEXO digital agency ecosystem.</p>
+                <p class="text-slate-400 text-sm mt-1">Join the WISDOM TOWER digital ecosystem.</p>
             </div>
 
             <form class="space-y-5" method="POST" action="{% url 'account_signup' %}">

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Milestone Administrative Control | NEXO{% endblock %}
+{% block title %}Milestone Administrative Control | WISDOM TOWER{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -112,7 +112,7 @@
                                 <span class="px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-[9px] font-black uppercase tracking-widest">
                                     Tier: {{ profile.chosen_tier|default:"None Selected" }}
                                 </span>
-                                <span class="px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest">
+                                <span id="admin-profile-progress-{{ profile.user.id }}" class="px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest">
                                     Progress: {{ profile.onboarding_progress_percentage }}%
                                 </span>
                             </div>
@@ -125,15 +125,22 @@
                                 {% for step in profile.roadmap_steps_qs %}
                                 <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/30 border border-slate-800">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-4 h-4 rounded-full {% if step.status == 'APPROVED' %}bg-emerald-400{% elif step.status == 'DECLINED' %}bg-rose-400{% else %}bg-amber-400{% endif %}"></div>
+                                        <div id="admin-step-dot-{{ step.id }}" class="w-4 h-4 rounded-full {% if step.status == 'APPROVED' %}bg-emerald-400{% else %}bg-rose-400{% endif %}"></div>
                                         <div>
                                             <div class="text-white text-sm font-bold">{{ step.title }}</div>
                                             <div class="text-slate-400 text-[11px]">{{ step.description }}</div>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <button type="button" onclick="updateStepStatus({{ step.id }}, 'APPROVED')" class="px-2 py-1 text-xs rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Approve</button>
-                                        <button type="button" onclick="updateStepStatus({{ step.id }}, 'DECLINED')" class="px-2 py-1 text-xs rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">Decline</button>
+                                    <div class="flex items-center gap-2" id="admin-step-container-{{ step.id }}">
+                                        {% if step.status == 'APPROVED' %}
+                                            <button type="button" onclick="toggleStep({{ step.id }})" id="admin-step-badge-{{ step.id }}" class="px-2.5 py-1 text-[10px] font-black tracking-wider rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-300 focus:outline-none flex items-center gap-1">
+                                                ✓ APPROVED
+                                            </button>
+                                        {% else %}
+                                            <button type="button" onclick="toggleStep({{ step.id }})" id="admin-step-badge-{{ step.id }}" class="px-2.5 py-1 text-[10px] font-black tracking-wider rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all duration-300 focus:outline-none flex items-center gap-1">
+                                                ✕ DECLINED
+                                            </button>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 {% empty %}
@@ -174,27 +181,55 @@ function getCookie(name) {
     return match ? decodeURIComponent(match[2]) : '';
 }
 
-window.updateStepStatus = function(stepId, newStatus) {
-    fetch(`/admin-panel/roadmap/step/${stepId}/update/`, {
+window.toggleStep = function(stepId) {
+    const csrftoken = getCookie('csrftoken');
+    fetch(`/client-dashboard/roadmap/step/${stepId}/toggle/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': csrftoken,
+            'X-Requested-With': 'XMLHttpRequest',
         },
-        body: `status=${encodeURIComponent(newStatus)}`
+        body: ''
     })
     .then(res => res.json())
     .then(data => {
         if (data.status === 'success') {
-            window.location.reload();
+            const btn = document.getElementById(`admin-step-badge-${stepId}`);
+            const dot = document.getElementById(`admin-step-dot-${stepId}`);
+            
+            if (data.new_status === 'APPROVED') {
+                if (btn) {
+                    btn.className = 'px-2.5 py-1 text-[10px] font-black tracking-wider rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-300 focus:outline-none flex items-center gap-1';
+                    btn.innerHTML = '✓ APPROVED';
+                }
+                if (dot) {
+                    dot.className = 'w-4 h-4 rounded-full bg-emerald-400';
+                }
+            } else {
+                if (btn) {
+                    btn.className = 'px-2.5 py-1 text-[10px] font-black tracking-wider rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all duration-300 focus:outline-none flex items-center gap-1';
+                    btn.innerHTML = '✕ DECLINED';
+                }
+                if (dot) {
+                    dot.className = 'w-4 h-4 rounded-full bg-rose-400';
+                }
+            }
+            
+            const progressBadge = document.getElementById(`admin-profile-progress-${data.client_user_id}`);
+            if (progressBadge) {
+                progressBadge.textContent = `Progress: ${data.progress_percent}%`;
+            }
         } else {
-            alert('Failed to update step status');
+            alert(data.error || 'Failed to update step status');
         }
     })
-    .catch(() => {
+    .catch(err => {
+        console.error('Error updating step status:', err);
         alert('Error updating step status');
     });
 };
+window.updateStepStatus = window.toggleStep;
 
 (function () {
     const goldColor = '#D4AF37';

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Experience Showcase | NEXO Portfolio{% endblock %}
+{% block title %}Experience Showcase | WISDOM TOWER{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-slate-950 py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -15,7 +15,7 @@
         <div class="text-center mb-16">
             <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-black uppercase tracking-widest mb-4">
                 <i class="fas fa-layer-group"></i>
-                <span>Nexo Experience Portfolio</span>
+                <span>Wisdom Tower Experience Portfolio</span>
             </div>
             <h1 class="text-4xl md:text-6xl font-black text-white tracking-tight mb-4">
                 Experience & <span class="dynamic-color-shift">Engineered Work</span>
@@ -101,8 +101,8 @@
                         <div class="aspect-video relative overflow-hidden bg-slate-950">
                             {% if project.is_playable and project.video %}
                                 <video class="w-full h-full object-cover"
-                                       controls playsinline
-                                       poster="{% if project.image %}{{ project.image.url }}{% else %}{{ project.image_url }}{% endif %}">
+                                       controls playsinline preload="metadata"
+                                       poster="{% if project.image %}{{ project.image.url }}{% elif project.image_url %}{{ project.image_url }}{% endif %}">
                                     <source src="{{ project.video.url }}" type="video/mp4">
                                     Your browser does not support the video tag.
                                 </video>
@@ -121,7 +121,10 @@
                                 </div>
                             {% endif %}
 
-                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                            {# Gradient overlay — pointer-events-none so it never blocks video controls #}
+                            {% if not project.is_playable %}
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none"></div>
+                            {% endif %}
                         </div>
 
                         <div class="p-6">

@@ -3,10 +3,10 @@ from django.core.management.base import BaseCommand
 from core.models import ServiceCategory, SubService
 
 class Command(BaseCommand):
-    help = "Seeds the database with 7 core domains and 70+ sub-services."
+    help = "Seeds the database with 7 core WISDOM TOWER domains and sub-services."
 
     def handle(self, *args, **options):
-        self.stdout.write("Seeding core service categories and sub-services...")
+        self.stdout.write("Seeding Wisdom Tower service categories and sub-services...")
 
         # 1. Clear old data to prevent duplication
         SubService.objects.all().delete()
@@ -23,16 +23,14 @@ class Command(BaseCommand):
                 'is_external_link': False,
                 'external_url': None,
                 'sub_services': [
-                    ("Presentation slide design", "Design professional slide decks in PowerPoint, Google Slides, Canva."),
-                    ("Book covers & eBook design", "Captivating cover designs for print and digital publications."),
-                    ("Resume/CV design", "Professional, high-impact resume and CV layouts."),
-                    ("Letterheads & company profiles", "Official corporate stationery, branded profiles, and business layouts."),
-                    ("Posters and flyers", "Eye-catching promotional flyers and poster prints."),
-                    ("Brochures & leaflets", "Multi-page folded brochures and informative leaflets."),
-                    ("Certificates & awards", "Formal recognition certificates and custom award templates."),
-                    ("Menu design", "Structured food, beverage, or service menu cards."),
-                    ("Business cards", "Sleek and memorable business cards for professional networking."),
-                    ("Stickers & digital artwork", "Branded sticker assets and custom vector digital designs.")
+                    ("Visual communication & brand identity", "Cohesive visual styles, logos, and corporate brand kits."),
+                    ("Presentation slide design (PowerPoint, Google Slides, Canva)", "Dynamic presentation slides and investor pitch decks."),
+                    ("Book covers & eBook design", "Captivating cover designs and eBook layouts."),
+                    ("Resume/CV design", "Job-winning, professional resume and CV templates."),
+                    ("Letterheads & company profiles", "Corporate letters, business documents, and company profiles."),
+                    ("Posters, flyers, brochures & leaflets", "High-quality promotional leaflets, brochures, and poster prints."),
+                    ("Certificates, awards & menu design", "Formal recognition certificates and custom menu designs."),
+                    ("Business cards, stickers & digital artwork", "Networking cards, custom stickers, and digital illustrations.")
                 ]
             },
             {
@@ -45,16 +43,13 @@ class Command(BaseCommand):
                 'is_external_link': False,
                 'external_url': None,
                 'sub_services': [
-                    ("Article and blog writing", "Deeply researched articles and blog posts tailored to your brand voice."),
-                    ("Website content writing", "Professional landing page content and main site copy."),
-                    ("Copywriting", "High-converting ad copy, sales copy, and product descriptions."),
-                    ("Scriptwriting", "Engaging video scripts for YouTube, podcasts, or short video clips."),
-                    ("Speech writing", "Tailored speeches and addresses for events and corporate presentations."),
-                    ("Story writing & creative fiction", "Custom creative writing, fictional stories, and narrative drafts."),
-                    ("Technical writing", "Clear software guides, user manuals, and technical documentation."),
-                    ("Proposal & Grant writing", "Persuasive funding proposals, business grants, and pitches."),
-                    ("Editing & proofreading", "Thorough grammar correction, syntax polishing, and style adjustments."),
-                    ("Rewriting & paraphrasing", "Fresh adaptations of existing articles or text to bypass duplicate flags.")
+                    ("Article and blog writing", "SEO-optimized articles and engaging blog posts."),
+                    ("Website content writing", "Compelling web copy including homepage, landing page, and about sections."),
+                    ("Copywriting (ads, product descriptions)", "High-converting ad copy, sales copy, and product descriptions."),
+                    ("Scriptwriting (YouTube, podcasts, short films)", "Narrative and instructional scripts designed for engagement and flow."),
+                    ("Speech writing & creative fiction stories", "Powerful keynote speeches and custom narrative stories."),
+                    ("Technical writing, proposal & grant writing", "Technical manuals, grant writing, and business proposals."),
+                    ("Editing, proofreading, rewriting & paraphrasing", "Thorough grammar correction and style polishing.")
                 ]
             },
             {
@@ -67,16 +62,14 @@ class Command(BaseCommand):
                 'is_external_link': False,
                 'external_url': None,
                 'sub_services': [
-                    ("Thesis & dissertation writing", "Ethical guided support, structuring, and research assistance for academic papers."),
-                    ("Academic editing & formatting", "Comprehensive formatting matching APA, MLA, Chicago, or Vancouver guidelines."),
-                    ("Research summaries & abstracts", "Concise summaries and abstracts of lengthy studies or journals."),
-                    ("Referencing & citation management", "Accurate citation insertion, reference listing, and bibliography cleanup."),
-                    ("Research proposals", "Structured proposals outlining hypotheses, methods, and literature gaps."),
-                    ("Plagiarism checking & reduction", "Originality reports and editing to reduce text duplication indices."),
-                    ("PowerPoint presentations for research defense", "Professional slides designed for thesis defense presentations."),
-                    ("Research publication preparation", "Refining articles to meet academic publisher submission requirements."),
-                    ("Systematic reviews & scoping reviews", "Methodical synthesis and analysis of literature for specific study topics."),
-                    ("Academic poster design", "Large-format visual posters for research conferences and symposiums.")
+                    ("Thesis & dissertation writing support", "Ethical structure support, feedback, and editing assistance."),
+                    ("Academic editing & formatting (APA, MLA, Chicago, Vancouver)", "Precision formatting according to standard styles."),
+                    ("Research summaries, proposals & abstracts", "Synthesizing lengthy studies and drafting abstracts."),
+                    ("Referencing & citation management", "Accurate citation catalogs and bibliography cleanup."),
+                    ("Plagiarism checking & reduction", "Originality scans and paraphrasing to reduce similarity index."),
+                    ("PowerPoint presentations for research defense", "Scientific slides optimized for thesis defenses."),
+                    ("Research publication preparation", "Refining research papers for academic journal submission."),
+                    ("Systematic reviews, scoping reviews & academic poster design", "Synthesis of literature and conference poster layouts.")
                 ]
             },
             {
@@ -89,16 +82,12 @@ class Command(BaseCommand):
                 'is_external_link': False,
                 'external_url': None,
                 'sub_services': [
-                    ("Data entry", "Fast and accurate data entry across spreadsheets and CRM portals."),
-                    ("Basic programming", "Custom script creation using Python, R, or SQL query development."),
-                    ("Automation scripts", "Automating repetitive workflows, web scraping, and API sync processes."),
-                    ("Data cleaning", "Formatting raw lists, removing duplicates, and structuring text fields."),
-                    ("Excel spreadsheet creation", "Creating formulas, pivot tables, and custom templates in Microsoft Excel."),
-                    ("Database management", "Relational database structuring, migration scripts, and schema optimizations."),
-                    ("Data collection & survey design development", "Creating surveys, questionnaires, and structuring data capture methods."),
-                    ("Questionnaire development", "Drafting research questionnaires with sound psychological/demographic structures."),
-                    ("Data analysis", "Statistical analysis using SPSS, Stata, Python, or Excel macros."),
-                    ("Statistical interpretation", "Writing explanatory narratives based on complex statistical analysis reports.")
+                    ("Data entry & cleaning", "Fast database input and cleaning/standardizing records."),
+                    ("Basic programming (Python, R, SQL)", "Custom code scripts, automated commands, and database querying."),
+                    ("Automation scripts", "Process automation, web scraping, and API integrations."),
+                    ("Excel spreadsheet creation & database management", "Complex pivot tables, databases, and automated spreadsheets."),
+                    ("Data collection, questionnaire development & survey design", "Gathering data inputs and drafting survey questionnaires."),
+                    ("Data analysis & statistical interpretation (SPSS, Stata, R, Excel)", "Processing statistical data and writing narratives.")
                 ]
             },
             {
@@ -111,16 +100,13 @@ class Command(BaseCommand):
                 'is_external_link': False,
                 'external_url': None,
                 'sub_services': [
-                    ("Website design", "Sleek website construction in WordPress, Wix, or custom HTML/CSS."),
-                    ("UI/UX design", "Figma wireframes and interactive prototypes for desktop or mobile apps."),
-                    ("SEO optimization", "On-page, technical, and keywords optimization to boost search ranking."),
-                    ("Landing page creation", "High-converting, responsive single-page layouts for campaigns."),
-                    ("Domain & hosting setup", "Domain registration, DNS configurations, and hosting server setups."),
-                    ("Website testing & debugging", "Comprehensive QA testing, cross-browser audits, and bug fixes."),
-                    ("Social media management", "Content calendars, caption drafting, and platform post scheduling."),
-                    ("Digital ad design", "Designing promotional visual creatives for Facebook, Instagram, or Google Ads."),
-                    ("Email marketing campaigns", "Newsletter layouts, autoresponder setups, and list sequence copies."),
-                    ("Content strategy development", "Comprehensive content roadmaps based on target audience analysis.")
+                    ("Website design (WordPress, Wix, HTML/CSS)", "Responsive, modern websites built for business growth."),
+                    ("UI/UX design & landing page creation", "Figma layouts, wireframes, and optimized landing pages."),
+                    ("SEO optimization, domain & hosting setup", "Boosting search rank, hosting server, and domain configurations."),
+                    ("Website testing & debugging", "QA audits, user experience checks, and code debugging."),
+                    ("Social media management & content strategy", "Content planning, captions, and platform post calendars."),
+                    ("Digital ad design (Facebook, Google Ads)", "Creative graphic ads to maximize ad conversions."),
+                    ("Email marketing campaigns", "Newsletter layouts, sequences, and autoresponder setups.")
                 ]
             },
             {
@@ -133,16 +119,11 @@ class Command(BaseCommand):
                 'is_external_link': False,
                 'external_url': None,
                 'sub_services': [
-                    ("Business plan writing", "Formal business plans containing market analysis and financial sections."),
-                    ("Pitch deck creation", "Polished pitch decks tailored to prospective investors or partners."),
-                    ("Market research", "Comprehensive market trend summaries, demographic analyses, and niche research."),
-                    ("Competitor & SWOT analysis", "In-depth competitor audits and SWOT analysis matrices."),
-                    ("Business reports", "Formal corporate reports, performance briefs, and executive summaries."),
-                    ("Email & calendar management", "Assisting with inbox sorting, filter management, and meeting scheduling."),
-                    ("Meeting notes & minutes", "Documenting minutes, action points, and summaries from virtual meetings."),
-                    ("Appointment booking & travel arrangements", "Managing flight bookings, hotel reservations, and calendar events."),
-                    ("Financial analysis", "Assisting with basic financial statements, models, and cost analyses."),
-                    ("Customer service support", "Responding to client queries, email desk management, and support services.")
+                    ("Business plan writing & pitch deck creation", "Formal business plans and raise-ready presentation decks."),
+                    ("Market research, competitor & SWOT analysis", "In-depth research on competitors, SWOT matrices, and niches."),
+                    ("Business reports & financial analysis", "Financial statements, models, and formal company reports."),
+                    ("Email, calendar & appointment management", "Inbox sorting, virtual calendars, and appointment schedules."),
+                    ("Meeting notes, minutes & customer service support", "Documenting call notes and resolving customer queries.")
                 ]
             },
             {
@@ -152,19 +133,15 @@ class Command(BaseCommand):
                 'icon_class': 'fas fa-graduation-cap',
                 'header_image': 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=2070',
                 'order': 7,
-                'is_external_link': True,
-                'external_url': 'https://wisdo-tower.com/education/',
+                'is_external_link': False,
+                'external_url': None,
                 'sub_services': [
-                    ("Online tutoring", "Interactive, personalized virtual tutoring sessions across subjects."),
-                    ("Course creation & eLearning content design", "Designing structured online courses, syllabus maps, and slides."),
-                    ("Lesson plan development", "Drafting step-by-step educational lesson guides for schools or tutors."),
-                    ("Quiz & exam creation", "Constructing testing forms, diagnostic quizzes, and exam structures."),
-                    ("Online form creation", "Designing functional customer intake forms, surveys, or feedback sheets."),
-                    ("eBook formatting", "Converting raw text manuscript into polished EPUB or print formats."),
-                    ("PDF editing & document conversion", "Editing existing PDFs, forms layout conversion, or OCR conversion."),
-                    ("Audio transcription", "Accurately converting podcasts, lectures, or interviews to clean transcripts."),
-                    ("Video editing & subtitles", "Polishing video reels, adding captions, and dynamic subtitles."),
-                    ("Voiceover recording", "High-quality vocal recordings for explainer videos, ads, or modules.")
+                    ("Online tutoring & lesson plan development", "Personalized tutoring sessions and syllabus creation."),
+                    ("Course creation & eLearning content design", "Design online courses, slide templates, and modules."),
+                    ("Quiz, exam & online form creation", "Diagnostic testing sheets and intake/feedback forms."),
+                    ("eBook formatting, PDF editing & document conversion", "EPUB/print conversion, OCR, and editing layout text."),
+                    ("Audio transcription, voiceover recording", "Vocal recordings and clean audio-to-text transcripts."),
+                    ("Video editing & subtitles", "Cutting video reels and adding dynamic subtitle tracks.")
                 ]
             }
         ]
@@ -190,4 +167,4 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(f"  -> Created sub-service: {sub_service.title}")
 
-        self.stdout.write(self.style.SUCCESS("Successfully seeded all 7 domains and 70+ sub-services!"))
+        self.stdout.write(self.style.SUCCESS("Successfully seeded all 7 WISDOM TOWER domains!"))

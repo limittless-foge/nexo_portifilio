@@ -363,24 +363,21 @@ class ClientProfile(models.Model):
 
     @property
     def approved_milestones_count(self):
-        count = 0
-        if self.services_selected_status == 'APPROVED':
-            count += 1
-        if self.team_assignment_status == 'APPROVED':
-            count += 1
-        if self.kickoff_call_status == 'APPROVED':
-            count += 1
-        if self.deliverables_begin_status == 'APPROVED':
-            count += 1
-        return count
+        return self.user.roadmap_steps.filter(status='APPROVED').count()
 
     @property
     def onboarding_progress_percentage(self):
-        return self.approved_milestones_count * 25
+        total_steps = self.user.roadmap_steps.count()
+        if total_steps == 0:
+            return 0
+        return int((self.approved_milestones_count / total_steps) * 100)
 
     @property
     def all_milestones_approved(self):
-        return self.approved_milestones_count == 4
+        total_steps = self.user.roadmap_steps.count()
+        if total_steps == 0:
+            return False
+        return self.approved_milestones_count == total_steps
 
     @property
     def milestones_list(self):
@@ -421,13 +418,14 @@ class ClientProfile(models.Model):
 
 class RoadmapStep(models.Model):
     STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
         ('APPROVED', 'Approved'),
         ('DECLINED', 'Declined'),
     ]
 
     title = models.CharField(max_length=100)
     description = models.CharField(max_length=255, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DECLINED')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     client = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='roadmap_steps')
     order = models.PositiveIntegerField(default=1)
 
@@ -456,7 +454,7 @@ def create_default_roadmap_steps(user):
             defaults={
                 'description': step.get('description', ''),
                 'order': step.get('order', 1),
-                'status': 'DECLINED',
+                'status': 'PENDING',
             }
         )
 

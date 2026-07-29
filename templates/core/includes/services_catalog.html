@@ -32,6 +32,26 @@
                     {% endfor %}
                 ]
             }{% if not forloop.last %},{% endif %}
+            {% empty %}
+            {% for cat in fallback_categories %}
+            {
+                "id": "fallback_{{ forloop.counter }}",
+                "title": "{{ cat.title }}",
+                "desc": "{{ cat.description|escapejs }}",
+                "icon": "{{ cat.icon_class }}",
+                "is_external": false,
+                "external_url": "",
+                "subservices": [
+                    {% for sub in cat.subservices %}
+                    {
+                        "id": "",
+                        "title": "{{ sub|escapejs }}",
+                        "desc": ""
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
             {% endfor %}
         ]
         </script>
@@ -40,7 +60,7 @@
         <div class="text-center mb-16">
             <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-black uppercase tracking-widest mb-4">
                 <i class="fas fa-cubes text-xs"></i>
-                <span>Nexo Solutions Catalog</span>
+                <span>Wisdom Tower Services Catalog</span>
             </div>
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 mb-4">
                 <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight">
@@ -121,6 +141,44 @@
                         </a>
                     </div>
                     {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            {# Fallback cards when the DB catalog table is empty #}
+            {% for cat in fallback_categories %}
+            <div class="service-card cursor-pointer group relative glass rounded-3xl border border-slate-800/90 overflow-hidden transition-all duration-500 hover:border-[#D4AF37]/50 hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.3)]"
+                 onclick="openServiceModal('fallback_{{ forloop.counter }}')">
+
+                <div class="h-32 overflow-hidden relative">
+                    <div class="w-full h-full bg-slate-900 flex items-center justify-center">
+                        <i class="{{ cat.icon_class }} text-slate-700 text-4xl"></i>
+                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                </div>
+
+                <div class="p-6 relative z-10">
+                    <div class="w-10 h-10 bg-[#D4AF37]/10 rounded-xl border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] mb-4">
+                        <i class="{{ cat.icon_class }} text-lg"></i>
+                    </div>
+                    <h3 class="text-lg font-black text-white mb-1">{{ cat.title }}</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed mb-3">{{ cat.description }}</p>
+
+                    <div class="pt-4 border-t border-slate-850 text-left space-y-2">
+                        <ul class="space-y-1.5 border-l border-slate-800/80 pl-3">
+                            {% for sub in cat.subservices|slice:":3" %}
+                            <li class="py-1 flex items-center gap-2">
+                                <i class="fas fa-check-circle text-[#D4AF37] text-[9px] shrink-0"></i>
+                                <span class="text-xs font-bold text-slate-300 truncate">{{ sub }}</span>
+                            </li>
+                            {% endfor %}
+                            {% with cat.subservices|length as sub_count %}
+                            {% if sub_count > 3 %}
+                            <li class="py-1 text-[10px] text-slate-500 font-bold tracking-wide italic">+ {{ sub_count|add:"-3" }} more services</li>
+                            {% endif %}
+                            {% endwith %}
+                        </ul>
+                    </div>
                 </div>
             </div>
             {% endfor %}

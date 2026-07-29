@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}Choose Pricing | NEXO Onboarding{% endblock %}
+{% block title %}Rules & Regulations | WISDOM TOWER{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-slate-950 py-24 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-3xl mx-auto">
+
         <!-- Progress Indicator -->
         <div class="flex items-center justify-center space-x-4 mb-12">
             <div class="flex items-center text-slate-500">
@@ -15,112 +16,149 @@
             <div class="h-0.5 w-12 bg-slate-800"></div>
             <div class="flex items-center text-accent">
                 <span class="w-8 h-8 rounded-full bg-accent/20 border border-accent flex items-center justify-center font-bold text-sm">2</span>
-                <span class="ml-2 text-xs font-black uppercase tracking-widest hidden sm:inline">Choose Pricing</span>
+                <span class="ml-2 text-xs font-black uppercase tracking-widest hidden sm:inline">Rules &amp; Regulations</span>
             </div>
         </div>
 
-        <div class="text-center mb-16">
-            <h1 class="text-4xl md:text-5xl font-black text-white tracking-tight mb-4">Choose Your Pricing Tier</h1>
-            <p class="text-slate-400 max-w-2xl mx-auto text-sm leading-relaxed">
-                Select a tier to activate your private client dashboard and launch your solutions roadmap.
+        <!-- Page Header -->
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-black uppercase tracking-widest mb-4">
+                <i class="fas fa-shield-alt text-xs"></i>
+                <span>Client Onboarding — Step 2</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-white tracking-tight mb-4">
+                Rules &amp; <span class="dynamic-color-shift">Regulations</span>
+            </h1>
+            <p class="text-slate-400 max-w-xl mx-auto text-sm leading-relaxed">
+                Before activating your client workspace, please review the following guidelines carefully. These ensure a smooth and professional working relationship with the Wisdom Tower team.
             </p>
         </div>
 
-        <form method="POST" id="pricing-form">
-            {% csrf_token %}
-            <input type="hidden" name="tier" id="selected-tier">
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Starter Tier -->
-                <div class="group relative glass p-8 rounded-3xl border-slate-800 overflow-hidden flex flex-col justify-between transition-all duration-500 hover:border-slate-700 hover:shadow-[0_0_30px_-10px_rgba(255,255,255,0.05)]">
-                    <div>
-                        <div class="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Starter Plan</div>
-                        <h3 class="text-3xl font-bold text-white mb-6">Starter</h3>
-                        
-                        <div class="mb-8">
-                            <span class="text-5xl font-black text-white">$149</span>
-                            <span class="text-slate-500 text-sm">/ month</span>
-                        </div>
-                        
-                        <p class="text-slate-400 text-xs leading-relaxed mb-8">Perfect for individuals and small startups looking to implement single tasks or foundational services.</p>
-                        
-                        <ul class="space-y-4 mb-8 text-xs text-slate-300">
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Up to 2 active services</li>
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Standard delivery timelines</li>
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Email-only support</li>
-                            <li class="flex items-center text-slate-600"><i class="fas fa-times mr-3"></i> Custom strategic reviews</li>
-                        </ul>
-                    </div>
-
-                    <button type="button" onclick="selectPlan('Starter')" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition">
-                        Choose Starter
-                    </button>
+        <!-- How to Contact Us Card -->
+        <div class="glass border border-accent/20 rounded-3xl p-8 mb-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-48 h-48 bg-accent/5 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+                    <i class="fas fa-phone-alt"></i>
                 </div>
-
-                <!-- Professional Tier (Recommended) -->
-                <div class="group relative glass p-8 rounded-3xl border-accent/40 overflow-hidden flex flex-col justify-between transition-all duration-500 hover:border-accent/60 hover:shadow-[0_0_40px_-10px_rgba(59,130,246,0.3)] bg-gradient-to-b from-slate-900/50 to-blue-950/20">
-                    <div class="absolute top-4 right-4 bg-accent text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                        Recommended
-                    </div>
-                    
-                    <div>
-                        <div class="text-accent text-xs font-black uppercase tracking-widest mb-2">Growth Plan</div>
-                        <h3 class="text-3xl font-bold text-white mb-6">Professional</h3>
-                        
-                        <div class="mb-8">
-                            <span class="text-5xl font-black text-white">$499</span>
-                            <span class="text-slate-500 text-sm">/ month</span>
-                        </div>
-                        
-                        <p class="text-slate-400 text-xs leading-relaxed mb-8">Optimal for growing businesses needing consistent deliverables, code iterations, and multi-channel strategies.</p>
-                        
-                        <ul class="space-y-4 mb-8 text-xs text-slate-300">
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Up to 6 active services</li>
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Fast-tracked priority queues</li>
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> 24/7 Slack and email support</li>
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Bi-weekly review calls</li>
-                        </ul>
-                    </div>
-
-                    <button type="button" onclick="selectPlan('Professional')" class="w-full py-4 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-highlight-400/20">
-                        Choose Professional
-                    </button>
-                </div>
-
-                <!-- Enterprise Tier -->
-                <div class="group relative glass p-8 rounded-3xl border-slate-800 overflow-hidden flex flex-col justify-between transition-all duration-500 hover:border-slate-700 hover:shadow-[0_0_30px_-10px_rgba(255,255,255,0.05)]">
-                    <div>
-                        <div class="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Corporate Plan</div>
-                        <h3 class="text-3xl font-bold text-white mb-6">Enterprise</h3>
-                        
-                        <div class="mb-8">
-                            <span class="text-5xl font-black text-white">$999</span>
-                            <span class="text-slate-500 text-sm">/ month</span>
-                        </div>
-                        
-                        <p class="text-slate-400 text-xs leading-relaxed mb-8">Full-suite agency integration with dedicated development, writing, strategy, and advisory pipelines.</p>
-                        
-                        <ul class="space-y-4 mb-8 text-xs text-slate-300">
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Unlimited active services</li>
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Dedicated project lead</li>
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Instant phone/chat support</li>
-                            <li class="flex items-center"><i class="fas fa-check text-accent mr-3"></i> Weekly engineering reviews</li>
-                        </ul>
-                    </div>
-
-                    <button type="button" onclick="selectPlan('Enterprise')" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition">
-                        Choose Enterprise
-                    </button>
+                <div>
+                    <h2 class="text-white font-black text-base">How to Reach Us Directly</h2>
+                    <p class="text-slate-500 text-xs uppercase tracking-widest font-bold">Preferred contact channels</p>
                 </div>
             </div>
+
+            <div class="space-y-4">
+                <!-- Phone -->
+                <div class="bg-slate-900/60 rounded-2xl border border-slate-800 p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-phone text-accent text-xs"></i>
+                        <span class="text-xs font-black uppercase tracking-widest text-accent">Call Us Directly</span>
+                    </div>
+                    <p class="text-slate-400 text-xs leading-relaxed mb-4">
+                        The fastest way to get started or discuss your project is to call us directly. Our team is available to answer your questions, clarify service scope, and align on timelines.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="tel:+251968929372"
+                           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent/10 border border-accent/30 text-accent text-xs font-black uppercase tracking-widest hover:bg-accent/20 transition">
+                            <i class="fas fa-phone-alt text-[10px]"></i>
+                            +251 968929372
+                        </a>
+                        <a href="tel:+25100763030"
+                           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent/10 border border-accent/30 text-accent text-xs font-black uppercase tracking-widest hover:bg-accent/20 transition">
+                            <i class="fas fa-phone-alt text-[10px]"></i>
+                            +251 00763030
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Message Us -->
+                <div class="bg-slate-900/60 rounded-2xl border border-slate-800 p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-envelope text-highlight-400 text-xs"></i>
+                        <span class="text-xs font-black uppercase tracking-widest text-highlight-400">Message Us</span>
+                    </div>
+                    <p class="text-slate-400 text-xs leading-relaxed mb-4">
+                        Use the <strong class="text-white">"MESSAGE US"</strong> section on our website to send a written inquiry. Please include your <strong class="text-white">phone number</strong> so we can follow up promptly. Your message will be reviewed within 24 hours.
+                    </p>
+                    <a href="{% url 'contact' %}"
+                       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-highlight-400/10 border border-highlight-400/30 text-highlight-400 text-xs font-black uppercase tracking-widest hover:bg-highlight-400/20 transition">
+                        <i class="fas fa-paper-plane text-[10px]"></i>
+                        Go to Message Us
+                    </a>
+                </div>
+
+                <!-- Social Media -->
+                <div class="bg-slate-900/60 rounded-2xl border border-slate-800 p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-share-alt text-purple-400 text-xs"></i>
+                        <span class="text-xs font-black uppercase tracking-widest text-purple-400">Find Us on Social Media</span>
+                    </div>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Our social media links are available in the <strong class="text-white">bottom footer</strong> of every page. You can reach us on Telegram, LinkedIn, Instagram, and other platforms. DM us your request and we will respond quickly.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rules Card -->
+        <div class="glass border border-slate-800 rounded-3xl p-8 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
+                    <i class="fas fa-gavel"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-black text-base">Client Conduct Guidelines</h2>
+                    <p class="text-slate-500 text-xs uppercase tracking-widest font-bold">Please read before confirming</p>
+                </div>
+            </div>
+            <ul class="space-y-4">
+                {% for rule, detail in rules %}
+                <li class="flex items-start gap-3">
+                    <span class="shrink-0 w-5 h-5 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center text-accent text-[9px] font-black mt-0.5">{{ forloop.counter }}</span>
+                    <div>
+                        <p class="text-white text-xs font-black mb-0.5">{{ rule }}</p>
+                        <p class="text-slate-400 text-xs leading-relaxed">{{ detail }}</p>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Confirmation Form -->
+        <form method="POST" id="confirm-form">
+            {% csrf_token %}
+            <input type="hidden" name="tier" value="Standard">
+
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 mb-6 flex items-start gap-3" id="checkbox-wrapper">
+                <input type="checkbox" id="agree-checkbox" required
+                       class="mt-0.5 w-4 h-4 shrink-0 cursor-pointer accent-accent">
+                <label for="agree-checkbox" class="text-slate-300 text-xs leading-relaxed cursor-pointer">
+                    I have read and understood the Rules &amp; Regulations above. I agree to contact Wisdom Tower directly via phone, the Message Us form, or social media to discuss pricing, timelines, and project specifics before work begins.
+                </label>
+            </div>
+
+            <button type="submit" id="confirm-btn"
+                    class="w-full py-4 bg-accent hover:bg-cyan-400 text-slate-950 text-sm font-black uppercase tracking-widest rounded-2xl transition shadow-xl shadow-accent/20 flex items-center justify-center gap-2">
+                <i class="fas fa-check-circle"></i>
+                Confirm &amp; Activate My Workspace
+            </button>
         </form>
+
     </div>
 </div>
 
 <script>
-    function selectPlan(tier) {
-        document.getElementById('selected-tier').value = tier;
-        document.getElementById('pricing-form').submit();
-    }
+    document.getElementById('confirm-btn').addEventListener('click', function(e) {
+        const checkbox = document.getElementById('agree-checkbox');
+        if (!checkbox.checked) {
+            e.preventDefault();
+            const wrapper = document.getElementById('checkbox-wrapper');
+            wrapper.classList.add('border-red-500/60', 'ring-2', 'ring-red-500/20');
+            setTimeout(() => wrapper.classList.remove('border-red-500/60', 'ring-2', 'ring-red-500/20'), 2500);
+        }
+    });
 </script>
 {% endblock %}
+
+
+

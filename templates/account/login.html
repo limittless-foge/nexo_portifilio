@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 {% load socialaccount %}
 
-{% block title %}Login | NEXO{% endblock %}
+{% block title %}Login | WISDOM TOWER{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-950 relative overflow-hidden">
@@ -12,10 +13,21 @@
     </div>
 
     <div class="max-w-md w-full relative z-10">
-        <!-- Brand Logo -->
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-black tracking-tighter text-white">NEXO<span class="text-highlight-400">.</span></h1>
-            <p class="text-slate-500 text-xs uppercase tracking-[0.2em] font-bold mt-2">Digital Intelligence</p>
+        <div class="text-center mb-10 flex flex-col items-center justify-center">
+            <a href="{% url 'home' %}" class="flex flex-col items-center gap-3 group">
+                <img src="{% static 'images/wisdom_tower_logo.png' %}" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" 
+                     alt="WISDOM TOWER" 
+                     class="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
+                <div class="hidden flex-col items-center gap-3">
+                    <svg class="w-12 h-12 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="6" y="8" width="4" height="20" fill="currentColor"/>
+                        <rect x="14" y="14" width="4" height="14" fill="currentColor"/>
+                        <circle cx="16" cy="9" r="2.5" fill="#00C2FF"/>
+                    </svg>
+                    <h1 class="text-2xl font-black text-white tracking-wider uppercase">WISDOM <span class="text-slate-400">TOWER</span></h1>
+                </div>
+            </a>
         </div>
 
         <!-- Glass Card -->
@@ -91,7 +103,7 @@
             </div>
 
             <p class="mt-10 text-center text-[11px] text-slate-500 font-bold uppercase tracking-widest">
-                New to Nexo? 
+                New to Wisdom Tower? 
                 <a href="{% url 'account_signup' %}" class="text-highlight-400 hover:text-lime-300 transition">Create Identity</a>
             </p>
         </div>

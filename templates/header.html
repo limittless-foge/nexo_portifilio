@@ -1,0 +1,130 @@
+{% load static %}
+<!-- Navbar -->
+<nav class="sticky top-0 z-50 glass border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+            <div class="flex-shrink-0 flex items-center space-x-12">
+                <a href="{% url 'home' %}" class="flex items-center gap-3 group">
+                    <img src="{% static 'images/wisdom_tower_logo.png' %}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" 
+                         alt="WISDOM TOWER" 
+                         class="h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
+                    <div class="hidden items-center gap-2 text-white">
+                        <svg class="w-8 h-8 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="8" width="4" height="20" fill="currentColor"/>
+                            <rect x="14" y="14" width="4" height="14" fill="currentColor"/>
+                            <circle cx="16" cy="9" r="2.5" fill="#00C2FF"/>
+                        </svg>
+                        <span class="text-lg font-black tracking-wider uppercase font-sans">WISDOM <span class="text-slate-400">TOWER</span></span>
+                    </div>
+                </a>
+            </div>
+            <div class="hidden md:block">
+                <div class="ml-10 flex items-baseline space-x-8">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'home' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Home</a>
+                        <a href="{% url 'services_page' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Services</a>
+                        <a href="{% url 'experience_page' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Experience</a>
+                        <a href="{% url 'contact' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Message Us</a>
+                        {% if not user.is_staff %}
+                            <a href="{% url 'client_dashboard' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Dashboard</a>
+                        {% endif %}
+                        {% if user.is_staff %}
+                            <!-- Admin Dropdown -->
+                            <div class="relative group" id="adminDropdown">
+                                <button class="flex items-center space-x-2 text-highlight-400 hover:text-white transition font-black uppercase text-[10px] tracking-widest focus:outline-none" onclick="toggleAdminDropdown()">
+                                    <i class="fas fa-terminal text-xs"></i>
+                                    <span>Admin Command</span>
+                                    <i class="fas fa-chevron-down text-[8px]"></i>
+                                </button>
+                                <div id="adminMenu" class="absolute left-0 mt-3 w-48 glass rounded-2xl border-slate-800 shadow-2xl py-2 hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <a href="{% url 'admin_dashboard' %}" class="block px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                        <i class="fas fa-chart-line mr-2"></i> Dashboard
+                                    </a>
+                                    <a href="{% url 'message_dash' %}" class="block px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                        <i class="fas fa-envelope mr-2"></i> See Messages
+                                    </a>
+                                    <a href="{% url 'review_dash' %}" class="block px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                        <i class="fas fa-star mr-2"></i> Rate Review
+                                    </a>
+                                    <div class="border-t border-slate-800 my-1"></div>
+                                    <a href="/admin/" target="_blank" class="block px-4 py-2 text-[10px] font-bold text-slate-500 hover:text-white hover:bg-white/5 transition uppercase tracking-widest">
+                                        <i class="fas fa-shield-alt mr-2"></i> Django Backend
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'home' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Home</a>
+                        <a href="{% url 'services_page' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Services</a>
+                        <a href="{% url 'experience_page' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Experience</a>
+                        <a href="{% url 'contact' %}" class="hover:text-accent transition font-bold text-xs uppercase tracking-widest">Message Us</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div id="navbar-phone-container" class="hidden lg:flex items-center gap-3 mr-4">
+                    <a href="tel:+251968929372" class="flex items-center gap-1.5 text-slate-300 hover:text-[#00C2FF] transition-colors">
+                        <svg class="w-3.5 h-3.5 text-[#00C2FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        <span class="text-xs font-semibold text-slate-300">+251 968929372</span>
+                    </a>
+                    <span class="text-slate-700">|</span>
+                    <a href="tel:+25100763030" class="flex items-center gap-1.5 text-slate-300 hover:text-[#00C2FF] transition-colors">
+                        <svg class="w-3.5 h-3.5 text-[#00C2FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        <span class="text-xs font-semibold text-slate-300">+251 00763030</span>
+                    </a>
+                </div>
+
+                {% if user.is_authenticated %}
+                    <div class="relative group" id="userDropdown">
+                        <button class="flex items-center space-x-3 focus:outline-none" onclick="toggleDropdown()">
+                            <div class="w-8 h-8 rounded-full overflow-hidden border border-slate-700 bg-slate-800">
+                                {% if user.socialaccount_set.all.0.get_avatar_url %}
+                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" class="w-full h-full object-cover" alt="Profile">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center text-accent text-xs font-bold">
+                                        {{ user.username|first|upper }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center space-x-3 hidden sm:flex">
+                                <span class="text-sm font-bold text-slate-300 group-hover:text-white transition">{{ user.username }}</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-[10px] text-slate-500 transition group-hover:text-white"></i>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="dropdownMenu" class="absolute right-0 mt-3 w-48 glass rounded-2xl border-slate-800 shadow-2xl py-2 hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                            {% if not user.is_staff %}
+                            <a href="{% url 'client_dashboard' %}" class="block px-4 py-2 text-xs font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                <i class="fas fa-layer-group mr-2"></i> Workspace
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'profile_settings' %}" class="block px-4 py-2 text-xs font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                <i class="fas fa-cog mr-2"></i> Settings
+                            </a>
+                            {% if user.is_staff %}
+                                <a href="{% url 'admin_dashboard' %}" class="block px-4 py-2 text-xs font-bold text-slate-400 hover:text-highlight-400 hover:bg-white/5 transition uppercase tracking-widest">
+                                    <i class="fas fa-terminal mr-2"></i> Admin Panel
+                                </a>
+                            {% endif %}
+                            <div class="border-t border-slate-800 my-1"></div>
+                            <form method="post" action="{% url 'account_logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full text-left px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-white/5 transition uppercase tracking-widest">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'account_login' %}" class="text-xs bg-highlight-400 hover:bg-lime-300 text-slate-950 px-6 py-2 rounded-full transition font-black uppercase tracking-widest">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>

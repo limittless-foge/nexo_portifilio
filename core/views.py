@@ -120,44 +120,13 @@ def admin_dashboard(request):
     project_form = ProjectForm()
     form = SiteSettingForm(instance=site_setting)
     if request.method == 'POST':
-        if 'update_site_settings' in request.POST:
-            if 'delete_video' in request.POST:
-                if site_setting.our_story_video:
-                    site_setting.our_story_video.delete(save=False)
-                    site_setting.our_story_video = None
-                    site_setting.save()
-                messages.success(request, "Our Story video removed successfully.")
-                return redirect('admin_panel')
-
-            if 'delete_image' in request.POST:
-                if site_setting.our_story_image:
-                    site_setting.our_story_image.delete(save=False)
-                    site_setting.our_story_image = None
-                    site_setting.save()
-                messages.success(request, "Fallback image removed successfully.")
-                return redirect('admin_panel')
-
-            form = SiteSettingForm(request.POST, request.FILES, instance=site_setting)
-            if form.is_valid():
-                site_setting = form.save()
-                submitted_numbers = [
-                    value.strip() for value in request.POST.getlist('phone_numbers') if value and value.strip()
-                ]
-                site_setting.phone_numbers.all().delete()
-                for phone_number in submitted_numbers:
-                    PhoneNumber.objects.create(site_setting=site_setting, number=phone_number)
-
-                site_setting.phone_number = submitted_numbers[0] if submitted_numbers else ''
-                site_setting.save(update_fields=['phone_number'])
-                messages.success(request, "Platform branding and media settings updated successfully!")
-                return redirect('admin_panel')
-        elif 'add_project' in request.POST:
+        if 'add_project' in request.POST:
             project_form = ProjectForm(request.POST, request.FILES)
             if project_form.is_valid():
                 project_form.save()
                 messages.success(request, "New project added to the portfolio successfully!")
                 return redirect('admin_panel')
-    
+
     # Convert queryset to list and attach roadmap steps to each profile to avoid DB hits in template
     client_profiles = list(client_profiles)
     for profile in client_profiles:
@@ -173,6 +142,50 @@ def admin_dashboard(request):
         'project_form': project_form,
         'client_profiles': client_profiles,
     })
+
+
+@staff_member_required
+def update_branding_assets(request):
+    site_setting = SiteSetting.get_instance()
+    
+    if request.method == 'POST':
+        if 'delete_video' in request.POST:
+            if site_setting.our_story_video:
+                site_setting.our_story_video.delete(save=False)
+                site_setting.our_story_video = None
+                site_setting.save()
+            messages.success(request, "Our Story video removed successfully.")
+            return redirect('admin_panel')
+
+        if 'delete_image' in request.POST:
+            if site_setting.our_story_image:
+                site_setting.our_story_image.delete(save=False)
+                site_setting.our_story_image = None
+                site_setting.save()
+            messages.success(request, "Fallback image removed successfully.")
+            return redirect('admin_panel')
+
+        # Copy POST data to populate missing fields from instance so validation doesn't fail
+        post_data = request.POST.copy()
+        if 'education_external_url' not in post_data:
+            post_data['education_external_url'] = site_setting.education_external_url
+
+        form = SiteSettingForm(post_data, request.FILES, instance=site_setting)
+        if form.is_valid():
+            site_setting = form.save()
+            
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success'})
+                
+            messages.success(request, "Platform branding and media settings updated successfully!")
+            return redirect('admin_panel')
+        else:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+            
+            messages.error(request, "Please fix the errors below.")
+            
+    return redirect('admin_panel')
 
 @staff_member_required
 def delete_review(request, review_id):
@@ -205,7 +218,11 @@ def select_services(request):
     if request.method == 'POST':
         selected_ids = request.POST.getlist('services')
         profile.selected_services.set(selected_ids)
+        # Mark the "Services Selected" milestone as APPROVED when the client confirms
+        profile.services_selected_status = 'APPROVED'
         profile.save()
+        # Keep the persisted RoadmapStep in sync immediately
+        RoadmapStep.objects.filter(client=request.user, title__iexact='Services Selected').update(status='APPROVED')
         return redirect('choose_pricing')
         
     services = ServiceItem.objects.all()
@@ -258,11 +275,26 @@ def choose_pricing(request):
             profile.chosen_tier = tier
             profile.onboarding_completed = True
             profile.save()
-            messages.success(request, "Setup completed successfully! Welcome to Nexo.")
+            messages.success(request, "Setup completed successfully! Welcome to Wisdom Tower.")
             return redirect('home')
             
+    rules = [
+        ("Contact Us Before Work Begins",
+         "All project scopes, timelines, and deliverables must be agreed upon by contacting Wisdom Tower directly via phone, the Message Us form, or social media — before any work commences."),
+        ("Provide a Valid Phone Number",
+         "When sending a written inquiry via the Message Us form, you must include a reachable phone number. This allows our team to follow up and confirm your requirements efficiently."),
+        ("Respect Agreed Timelines",
+         "Once a project timeline is agreed upon, clients are expected to provide required materials, approvals, and feedback promptly. Delays caused by the client may affect the agreed delivery schedule."),
+        ("No Unauthorized Redistribution",
+         "Deliverables provided by Wisdom Tower are intended exclusively for the client's own use and may not be resold, redistributed, or sub-licensed without prior written permission."),
+        ("Professional Communication",
+         "All communication with the Wisdom Tower team should be conducted professionally and respectfully. Abusive or inappropriate behaviour may result in immediate termination of service."),
+        ("Payment Discussion is Direct",
+         "Pricing is never fixed — it is determined directly between you and our team based on scope, complexity, and timeline. We do not publish or enforce fixed rate cards; all quotes are custom."),
+    ]
     return render(request, 'core/choose_pricing.html', {
         'profile': profile,
+        'rules': rules,
     })
 
 
@@ -457,6 +489,37 @@ def update_roadmap_status(request, step_id):
     })
 
 
+def _sync_roadmap_step_to_profile(step):
+    profile, _ = ClientProfile.objects.get_or_create(user=step.client)
+    title_lower = step.title.lower()
+    if 'services selected' in title_lower:
+        profile.services_selected_status = step.status
+    elif 'team assignment' in title_lower:
+        profile.team_assignment_status = step.status
+    elif 'kickoff call' in title_lower:
+        profile.kickoff_call_status = step.status
+    elif 'deliverables begin' in title_lower:
+        profile.deliverables_begin_status = step.status
+    profile.save()
+
+
+def _sync_profile_to_roadmap_steps(profile):
+    mapping = {
+        'services_selected_status': 'Services Selected',
+        'team_assignment_status': 'Team Assignment',
+        'kickoff_call_status': 'Kickoff Call',
+        'deliverables_begin_status': 'Deliverables Begin',
+    }
+    for field, title in mapping.items():
+        status = getattr(profile, field)
+        if status == 'APPROVED':
+            RoadmapStep.objects.filter(client=profile.user, title__iexact=title).update(status='APPROVED')
+        elif status == 'DECLINED':
+            RoadmapStep.objects.filter(client=profile.user, title__iexact=title).update(status='DECLINED')
+        else:
+            RoadmapStep.objects.filter(client=profile.user, title__iexact=title).update(status='PENDING')
+
+
 @login_required
 @require_POST
 def update_roadmap_step_status(request, step_id):
@@ -466,10 +529,26 @@ def update_roadmap_step_status(request, step_id):
     step = get_object_or_404(RoadmapStep, id=step_id)
     new_status = (request.POST.get('status') or '').upper()
 
-    if new_status in {'APPROVED', 'DECLINED'}:
+    if new_status in {'APPROVED', 'DECLINED', 'PENDING'}:
         step.status = new_status
         step.save()
-        return JsonResponse({'status': 'success', 'new_status': step.status, 'step_id': step.id})
+        _sync_roadmap_step_to_profile(step)
+        
+        # Calculate updated progress metrics to return to the caller
+        client_steps = RoadmapStep.objects.filter(client=step.client)
+        total_count = client_steps.count()
+        approved_count = client_steps.filter(status='APPROVED').count()
+        progress_percent = int((approved_count / total_count) * 100) if total_count > 0 else 0
+        
+        return JsonResponse({
+            'status': 'success',
+            'new_status': step.status,
+            'step_id': step.id,
+            'progress_percent': progress_percent,
+            'approved_count': approved_count,
+            'total_count': total_count,
+            'client_user_id': step.client.id,
+        })
 
     return JsonResponse({'error': 'Invalid status'}, status=400)
 
@@ -478,11 +557,12 @@ def update_roadmap_step_status(request, step_id):
 @require_POST
 def toggle_roadmap_step(request, step_id):
     step = get_object_or_404(RoadmapStep, id=step_id)
-    if request.user != step.client and not request.user.is_staff:
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized: Admin access required.'}, status=403)
 
     step.status = 'DECLINED' if step.status == 'APPROVED' else 'APPROVED'
     step.save()
+    _sync_roadmap_step_to_profile(step)
 
     client_steps = RoadmapStep.objects.filter(client=step.client)
     total_count = client_steps.count()
@@ -496,6 +576,7 @@ def toggle_roadmap_step(request, step_id):
         'progress_percent': progress_percent,
         'approved_count': approved_count,
         'total_count': total_count,
+        'client_user_id': step.client.id,
     })
 
 
@@ -515,6 +596,7 @@ def milestone_admin_dashboard(request):
             elif milestone_field == 'deliverables':
                 profile.deliverables_begin_status = 'APPROVED'
             profile.save()
+            _sync_profile_to_roadmap_steps(profile)
             messages.success(request, f"Milestone for {profile.user.username} approved successfully!")
         return redirect('milestone_admin_dashboard')
 
@@ -549,6 +631,7 @@ def approve_milestone(request, milestone_id):
             profile.deliverables_begin_status = 'APPROVED'
             
     profile.save()
+    _sync_profile_to_roadmap_steps(profile)
     messages.success(request, "Milestone status updated to APPROVED.")
     
     referer = request.META.get('HTTP_REFERER')
@@ -941,7 +1024,8 @@ def get_active_services(request):
 @csrf_exempt
 def add_team_member_inline(request):
     """
-    Staff-only endpoint to create or update a TeamMember (leader) via AJAX/JSON without leaving the page.
+    Staff-only endpoint to create or update a TeamMember (leader) via AJAX/FormData without leaving the page.
+    Accepts multipart/form-data (avatar file upload) or JSON body.
     """
     if not (request.user.is_authenticated and request.user.is_staff):
         return JsonResponse({'status': 'error', 'message': 'Forbidden: Staff access required.'}, status=403)
@@ -949,18 +1033,23 @@ def add_team_member_inline(request):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed.'}, status=405)
 
-    import json
-    try:
-        data = json.loads(request.body)
-    except (ValueError, TypeError):
+    # Resolve data source: prefer multipart form data, fall back to JSON body
+    content_type = request.content_type or ''
+    if 'multipart' in content_type or 'application/x-www-form-urlencoded' in content_type:
         data = request.POST
+    else:
+        import json
+        try:
+            data = json.loads(request.body)
+        except (ValueError, TypeError):
+            data = request.POST
 
     member_id = data.get('id')
-    name = data.get('name', '').strip()
-    job_role = data.get('job_role', '').strip()
-    bio = data.get('bio', '').strip()
-    image_url = data.get('image_url', '').strip()
+    name = (data.get('name') or '').strip()
+    job_role = (data.get('job_role') or '').strip()
+    bio = (data.get('bio') or '').strip()
     order_val = data.get('order', 0)
+    avatar_file = request.FILES.get('avatar')
 
     if not name or not job_role:
         return JsonResponse({'status': 'error', 'message': 'Name and job role are required.'}, status=400)
@@ -976,21 +1065,23 @@ def add_team_member_inline(request):
             member.name = name
             member.job_role = job_role
             member.bio = bio
-            if image_url:
-                member.image_url = image_url
             member.order = order
+            if avatar_file:
+                member.image = avatar_file
             member.save()
             action = 'updated'
         except TeamMember.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Leader not found.'}, status=404)
     else:
-        member = TeamMember.objects.create(
+        member = TeamMember(
             name=name,
             job_role=job_role,
             bio=bio,
-            image_url=image_url,
             order=order
         )
+        if avatar_file:
+            member.image = avatar_file
+        member.save()
         action = 'created'
 
     return JsonResponse({
@@ -1011,6 +1102,7 @@ def add_team_member_inline(request):
 def services_page(request):
     """
     Public/Unified Services Catalog page accessible to both unauthenticated visitors and logged-in clients.
+    Falls back to a hardcoded catalog if the ServiceCategory table is empty.
     """
     categories = ServiceCategory.objects.all().prefetch_related('subservices').order_by('order')
     selected_service_ids = []
@@ -1018,8 +1110,107 @@ def services_page(request):
         profile, _ = ClientProfile.objects.get_or_create(user=request.user)
         selected_service_ids = list(profile.selected_services.values_list('id', flat=True))
 
+    # --- Fallback: if the DB catalog is empty, provide hardcoded Wisdom Tower categories ---
+    fallback_categories = []
+    if not categories.exists():
+        fallback_categories = [
+            {
+                'title': 'Graphic & Print Design',
+                'icon_class': 'fas fa-palette',
+                'description': 'Visual identity crafted for print and digital impact.',
+                'subservices': [
+                    'Visual communication & brand identity',
+                    'Presentation slide design (PowerPoint, Google Slides, Canva)',
+                    'Book covers & eBook design',
+                    'Resume/CV design',
+                    'Posters, flyers, brochures & leaflets',
+                    'Business cards, stickers & digital artwork',
+                ],
+            },
+            {
+                'title': 'Writing & Editorial',
+                'icon_class': 'fas fa-pen-nib',
+                'description': 'Words that persuade, inform, and convert.',
+                'subservices': [
+                    'Article and blog writing',
+                    'Website content writing',
+                    'Copywriting (ads, product descriptions)',
+                    'Scriptwriting (YouTube, podcasts, short films)',
+                    'Speech writing & creative fiction stories',
+                    'Technical writing, proposal & grant writing',
+                    'Editing, proofreading, rewriting & paraphrasing',
+                ],
+            },
+            {
+                'title': 'Academic & Research Support',
+                'icon_class': 'fas fa-graduation-cap',
+                'description': 'Rigorous research and academic formatting.',
+                'subservices': [
+                    'Thesis & dissertation writing support',
+                    'Academic editing & formatting (APA, MLA, Chicago, Vancouver)',
+                    'Research summaries, proposals & abstracts',
+                    'Referencing & citation management',
+                    'Plagiarism checking & reduction',
+                    'PowerPoint presentations for research defense',
+                ],
+            },
+            {
+                'title': 'Data & Tech Solutions',
+                'icon_class': 'fas fa-database',
+                'description': 'Custom web software, APIs, and analytics engineering.',
+                'subservices': [
+                    'Custom website & web app development',
+                    'E-commerce & business system development',
+                    'API integration & backend systems',
+                    'Data analysis & business intelligence dashboards',
+                    'Automation & workflow scripting',
+                    'Digital tools & SaaS product consulting',
+                ],
+            },
+            {
+                'title': 'Web & Digital Marketing',
+                'icon_class': 'fas fa-bullhorn',
+                'description': 'Strategies that grow traffic, leads, and conversions.',
+                'subservices': [
+                    'SEO strategy & implementation',
+                    'Social media management & content calendars',
+                    'Paid advertising (Google Ads, Meta Ads)',
+                    'Email marketing campaigns',
+                    'Content strategy & editorial planning',
+                    'Influencer and affiliate marketing coordination',
+                ],
+            },
+            {
+                'title': 'Business Strategy & Admin',
+                'icon_class': 'fas fa-briefcase',
+                'description': 'Professional frameworks to grow and manage your enterprise.',
+                'subservices': [
+                    'Business plan writing',
+                    'Market research & competitor analysis',
+                    'Financial modeling & projections',
+                    'Virtual assistant services',
+                    'HR & recruitment consulting',
+                    'Startup advisory & pitch deck creation',
+                ],
+            },
+            {
+                'title': 'Education & Multimedia',
+                'icon_class': 'fas fa-chalkboard-teacher',
+                'description': 'Interactive e-learning content and instructional media.',
+                'subservices': [
+                    'E-learning course creation',
+                    'Instructional video production & editing',
+                    'Motion graphics & animated explainers',
+                    'Training materials & workshop content',
+                    'Podcast editing & audio production',
+                    'YouTube channel management & content strategy',
+                ],
+            },
+        ]
+
     return render(request, 'core/services.html', {
         'categories': categories,
+        'fallback_categories': fallback_categories,
         'selected_service_ids': selected_service_ids,
     })
 
