@@ -11,7 +11,7 @@ from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .models import Review, ContactMessage, Service, Project, SiteSetting, TeamMember, ServiceItem, ClientProfile, ClientActivityLog, ProjectCategory, PhoneNumber, ServiceCategory, RoadmapStep
 from .serializers import ClientAnalyticsSerializer
 from .forms import SiteSettingForm, ProjectForm
@@ -36,6 +36,17 @@ def home(request):
                 rating=int(rating),
                 comment=comment
             )
+            try:
+                from .models import create_notification
+                admins = User.objects.filter(is_staff=True)
+                create_notification(
+                    recipients=admins,
+                    title="New Client Review",
+                    message=f"New {rating}-star review submitted by {request.user.username}.",
+                    notification_type="new_review"
+                )
+            except Exception:
+                pass
             messages.success(request, "Thank you for your review!")
             return redirect('home')
 
@@ -84,6 +95,17 @@ def contact(request):
                 subject=subject,
                 message=message_content
             )
+            try:
+                from .models import create_notification
+                admins = User.objects.filter(is_staff=True)
+                create_notification(
+                    recipients=admins,
+                    title="New Contact Message",
+                    message=f"New message from {request.user.username}: '{subject}'",
+                    notification_type="contact_message"
+                )
+            except Exception:
+                pass
             messages.success(request, "Message sent successfully!")
             return redirect('home')
     return render(request, 'core/contact.html')
@@ -100,8 +122,27 @@ def profile_settings(request):
         else:
             messages.error(request, "Please correct the error below.")
 
+    notifications = request.user.notifications.all()
+
     return render(request, 'account/settings.html', {
         'password_form': password_form,
+        'notifications': notifications,
+    })
+
+
+@login_required
+@require_POST
+def mark_notification_read(request, notification_id):
+    from .models import Notification
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    notification.is_read = True
+    notification.save()
+    
+    unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+    return JsonResponse({
+        'status': 'success',
+        'unread_notifications_count': unread_count,
+        'notification_id': notification.id
     })
 
 @staff_member_required
@@ -245,7 +286,22 @@ def select_services(request):
 @require_POST
 def toggle_service(request, service_id):
     service = get_object_or_404(ServiceItem, id=service_id)
-    profile, _ = ClientProfile.objects.get_or_create(user=request.user)
+    
+    client_id = request.GET.get('client_id') or request.POST.get('client_id')
+    profile = None
+    if client_id and request.user.is_staff:
+        try:
+            from django.contrib.auth.models import User
+            user = User.objects.filter(id=client_id).first()
+            if user:
+                profile, _ = ClientProfile.objects.get_or_create(user=user)
+            else:
+                profile = get_object_or_404(ClientProfile, id=client_id)
+        except (ValueError, TypeError):
+            pass
+
+    if not profile:
+        profile, _ = ClientProfile.objects.get_or_create(user=request.user)
 
     if profile.selected_services.filter(id=service.id).exists():
         profile.selected_services.remove(service)
@@ -351,10 +407,12 @@ def client_dashboard(request, user_id=None):
 
 
 class ClientAnalyticsView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, client_id, *args, **kwargs):
         profile = get_object_or_404(ClientProfile, id=client_id)
+        if not request.user.is_staff and profile.user != request.user:
+            return Response({'error': 'Unauthorized'}, status=403)
         
         # 1. Fetch engagement data (aggregate activity log by date)
         engagement = (
@@ -561,6 +619,54 @@ def toggle_roadmap_step(request, step_id):
         return JsonResponse({'error': 'Unauthorized: Admin access required.'}, status=403)
 
     step.status = 'DECLINED' if step.status == 'APPROVED' else 'APPROVED'
+    step.save()
+    _sync_roadmap_step_to_profile(step)
+
+    client_steps = RoadmapStep.objects.filter(client=step.client)
+    total_count = client_steps.count()
+    approved_count = client_steps.filter(status='APPROVED').count()
+    progress_percent = int((approved_count / total_count) * 100) if total_count > 0 else 0
+
+    return JsonResponse({
+        'status': 'success',
+        'step_id': step.id,
+        'new_status': step.status,
+        'progress_percent': progress_percent,
+        'approved_count': approved_count,
+        'total_count': total_count,
+        'client_user_id': step.client.id,
+    })
+
+
+@login_required
+@require_POST
+def roadmap_update_status_api(request):
+    """
+    Fine-grained 3-state roadmap step control for admin use.
+    Accepts JSON body: { "step_id": <int>, "status": "APPROVED"|"DECLINED"|"PENDING" }
+    Returns JSON with updated step info and recalculated progress.
+    Staff-only: returns 403 for non-staff users.
+    """
+    import json
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized: Admin access required.'}, status=403)
+
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'error': 'Invalid JSON payload.'}, status=400)
+
+    step_id = payload.get('step_id')
+    new_status = (payload.get('status') or '').upper()
+
+    if not step_id:
+        return JsonResponse({'error': 'Missing step_id.'}, status=400)
+
+    if new_status not in {'APPROVED', 'DECLINED', 'PENDING'}:
+        return JsonResponse({'error': f'Invalid status "{new_status}". Must be APPROVED, DECLINED, or PENDING.'}, status=400)
+
+    step = get_object_or_404(RoadmapStep, id=step_id)
+    step.status = new_status
     step.save()
     _sync_roadmap_step_to_profile(step)
 
@@ -872,6 +978,18 @@ def metric_entries_api(request):
             defaults={'value': value, 'note': note}
         )
 
+        try:
+            from .models import create_notification
+            action_word = "added" if created else "updated"
+            create_notification(
+                recipients=client,
+                title="Analytics Metric Updated",
+                message=f"Admin has {action_word} a data point for '{sub_service.title}' on {entry_date.strftime('%Y-%m-%d')}.",
+                notification_type="metric_update"
+            )
+        except Exception:
+            pass
+
         return JsonResponse({
             'status': 'created' if created else 'updated',
             'entry': {
@@ -1106,7 +1224,24 @@ def services_page(request):
     """
     categories = ServiceCategory.objects.all().prefetch_related('subservices').order_by('order')
     selected_service_ids = []
-    if request.user.is_authenticated:
+    
+    # ── Grab client_id parameter if requested by staff ──
+    client_id = request.GET.get('client_id')
+    target_profile = None
+    if client_id and request.user.is_authenticated and request.user.is_staff:
+        try:
+            from django.contrib.auth.models import User
+            user = User.objects.filter(id=client_id).first()
+            if user:
+                target_profile = ClientProfile.objects.filter(user=user).first()
+            else:
+                target_profile = ClientProfile.objects.filter(id=client_id).first()
+        except (ValueError, TypeError):
+            pass
+
+    if target_profile:
+        selected_service_ids = list(target_profile.selected_services.values_list('id', flat=True))
+    elif request.user.is_authenticated:
         profile, _ = ClientProfile.objects.get_or_create(user=request.user)
         selected_service_ids = list(profile.selected_services.values_list('id', flat=True))
 
@@ -1212,6 +1347,7 @@ def services_page(request):
         'categories': categories,
         'fallback_categories': fallback_categories,
         'selected_service_ids': selected_service_ids,
+        'site_settings': SiteSetting.objects.first(),
     })
 
 

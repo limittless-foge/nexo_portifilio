@@ -521,6 +521,12 @@
 </div>
 
 <script>
+// ── Shared CSRF Cookie Helper ──────────────────────────────────────────────
+function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : '';
+}
+
 function openAddLeaderModal() {
     document.getElementById('leader-id').value = '';
     document.getElementById('leader-name').value = '';
@@ -584,19 +590,9 @@ async function submitAddLeader() {
         if (avatarFileInput && avatarFileInput.files[0]) {
             formData.append('avatar', avatarFileInput.files[0]);
         }
-        // CSRF token from cookie
-        function getCsrfToken() {
-            const name = 'csrftoken';
-            const cookies = document.cookie.split(';');
-            for (let c of cookies) {
-                c = c.trim();
-                if (c.startsWith(name + '=')) return decodeURIComponent(c.slice(name.length + 1));
-            }
-            return '';
-        }
         const resp = await fetch('/api/team/add/', {
             method: 'POST',
-            headers: { 'X-CSRFToken': getCsrfToken() },
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: formData
         });
         const res = await resp.json();

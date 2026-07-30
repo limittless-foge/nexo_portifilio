@@ -504,6 +504,17 @@ class ClientActivityLog(models.Model):
 def handle_user_profile(sender, instance, created, **kwargs):
     if created:
         ClientProfile.objects.get_or_create(user=instance)
+        if not instance.is_staff:
+            try:
+                admins = User.objects.filter(is_staff=True)
+                create_notification(
+                    recipients=admins,
+                    title="New Client Signup",
+                    message=f"A new client account '{instance.username}' has registered.",
+                    notification_type="client_signup"
+                )
+            except Exception:
+                pass
     else:
         if hasattr(instance, 'nexo_profile'):
             instance.nexo_profile.save()
@@ -578,3 +589,43 @@ class ClientMetricEntry(models.Model):
         return f"{self.client.username} | {self.sub_service.title} | {self.value} on {self.date}"
 
 MetricEntry = ClientMetricEntry
+
+
+class Notification(models.Model):
+    NOTIFICATION_TYPE_CHOICES = [
+        ('contact_message', 'New Contact Message'),
+        ('new_review', 'New Review/Rating'),
+        ('client_signup', 'New Client Signup'),
+        ('metric_update', 'Analytics Metric Update'),
+    ]
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPE_CHOICES)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification to {self.recipient.username}: {self.title} (Read: {self.is_read})"
+
+
+def create_notification(recipients, title, message, notification_type):
+    """Helper to create notifications in bulk or for single recipients."""
+    if not hasattr(recipients, '__iter__'):
+        recipients = [recipients]
+    
+    notifications = []
+    for r in recipients:
+        notifications.append(
+            Notification(
+                recipient=r,
+                title=title,
+                message=message,
+                notification_type=notification_type
+            )
+        )
+    Notification.objects.bulk_create(notifications)

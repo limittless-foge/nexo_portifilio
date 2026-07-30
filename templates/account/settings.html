@@ -23,75 +23,259 @@
 
         <div class="grid md:grid-cols-3 gap-8">
             <!-- Sidebar Navigation -->
-            <div class="space-y-2">
-                <button class="w-full text-left px-6 py-4 bg-slate-900 rounded-2xl border border-slate-800 text-highlight-400 font-bold transition">
+            <div class="space-y-2" id="settings-tabs">
+                <button onclick="switchTab('general')" id="tab-btn-general" class="w-full text-left px-6 py-4 bg-slate-900 rounded-2xl border border-slate-800 text-highlight-400 font-bold transition relative">
                     <i class="fas fa-user-circle mr-3"></i> General
                 </button>
-                <button class="w-full text-left px-6 py-4 hover:bg-slate-900/50 rounded-2xl text-slate-400 font-bold transition">
+                <button onclick="switchTab('security')" id="tab-btn-security" class="w-full text-left px-6 py-4 hover:bg-slate-900/50 rounded-2xl text-slate-400 font-bold transition relative">
                     <i class="fas fa-shield-alt mr-3"></i> Security
                 </button>
-                <button class="w-full text-left px-6 py-4 hover:bg-slate-900/50 rounded-2xl text-slate-400 font-bold transition">
+                <button onclick="switchTab('notifications')" id="tab-btn-notifications" class="w-full text-left px-6 py-4 hover:bg-slate-900/50 rounded-2xl text-slate-400 font-bold transition relative">
                     <i class="fas fa-bell mr-3"></i> Notifications
+                    <span id="tab-unread-dot" class="absolute right-6 top-5 w-2 h-2 bg-red-500 rounded-full {% if unread_notifications_count == 0 %}hidden{% endif %}"></span>
                 </button>
             </div>
 
             <!-- Main Content -->
-            <div class="md:col-span-2 space-y-8">
-                <!-- User Info -->
-                <div class="glass p-8 rounded-3xl border-slate-800">
-                    <h3 class="text-xl font-bold text-white mb-6">General Profile</h3>
-                    <div class="space-y-6">
-                        <div>
-                            <label class="block text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Username</label>
-                            <div class="bg-slate-800/50 px-5 py-4 rounded-2xl text-white font-medium border border-slate-700/30">
-                                {{ user.username }}
+            <div class="md:col-span-2">
+                
+                <!-- PANEL: General -->
+                <div id="panel-general" class="tab-panel space-y-8">
+                    <!-- User Info -->
+                    <div class="glass p-8 rounded-3xl border-slate-800">
+                        <h3 class="text-xl font-bold text-white mb-6">General Profile</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Username</label>
+                                <div class="bg-slate-800/50 px-5 py-4 rounded-2xl text-white font-medium border border-slate-700/30">
+                                    {{ user.username }}
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <label class="block text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Email Address</label>
-                            <div class="bg-slate-800/50 px-5 py-4 rounded-2xl text-white font-medium border border-slate-700/30">
-                                {{ user.email }}
+                            <div>
+                                <label class="block text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Email Address</label>
+                                <div class="bg-slate-800/50 px-5 py-4 rounded-2xl text-white font-medium border border-slate-700/30">
+                                    {{ user.email }}
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <label class="block text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Member Since</label>
-                            <div class="text-slate-300 font-medium ml-1">
-                                {{ user.date_joined|date:"F Y" }}
+                            <div>
+                                <label class="block text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Member Since</label>
+                                <div class="text-slate-300 font-medium ml-1">
+                                    {{ user.date_joined|date:"F Y" }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Security / Password Change -->
-                <div class="glass p-8 rounded-3xl border-slate-800">
-                    <h3 class="text-xl font-bold text-white mb-6">Security</h3>
-                    <div class="mb-8">
-                        <p class="text-slate-400 text-sm leading-relaxed">Ensure your account is protected with a strong, unique password. You can update your credentials below.</p>
-                    </div>
+                <!-- PANEL: Security -->
+                <div id="panel-security" class="tab-panel space-y-8 hidden">
+                    <!-- Security / Password Change -->
+                    <div class="glass p-8 rounded-3xl border-slate-800">
+                        <h3 class="text-xl font-bold text-white mb-6">Security</h3>
+                        <div class="mb-8">
+                            <p class="text-slate-400 text-sm leading-relaxed">Ensure your account is protected with a strong, unique password. You can update your credentials below.</p>
+                        </div>
 
-                    <form method="POST" class="space-y-5">
-                        {% csrf_token %}
-                        {% for field in password_form %}
-                        <div>
-                            <label for="{{ field.id_for_label }}" class="block text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 ml-1">{{ field.label }}</label>
-                            <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}" 
-                                   class="w-full px-5 py-4 bg-slate-800/50 border border-slate-700/30 rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-highlight-400/30 transition-all text-sm" 
-                                   placeholder="••••••••">
-                            {% if field.errors %}
-                                <p class="text-red-400 text-[10px] mt-1 ml-2">{{ field.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                        
-                        <div class="pt-4">
-                            <button type="submit" name="change_password" class="px-8 py-4 bg-highlight-400 hover:bg-lime-300 text-slate-950 font-black text-xs uppercase tracking-widest rounded-2xl transition shadow-lg shadow-highlight-400/10">
-                                Update Password
-                            </button>
-                        </div>
-                    </form>
+                        <form method="POST" class="space-y-5">
+                            {% csrf_token %}
+                            {% for field in password_form %}
+                            <div>
+                                <label for="{{ field.id_for_label }}" class="block text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2 ml-1">{{ field.label }}</label>
+                                <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}" 
+                                       class="w-full px-5 py-4 bg-slate-800/50 border border-slate-700/30 rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-highlight-400/30 transition-all text-sm" 
+                                       placeholder="••••••••">
+                                {% if field.errors %}
+                                    <p class="text-red-400 text-[10px] mt-1 ml-2">{{ field.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            
+                            <div class="pt-4">
+                                <button type="submit" name="change_password" class="px-8 py-4 bg-highlight-400 hover:bg-lime-300 text-slate-950 font-black text-xs uppercase tracking-widest rounded-2xl transition shadow-lg shadow-highlight-400/10">
+                                    Update Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
+
+                <!-- PANEL: Notifications -->
+                <div id="panel-notifications" class="tab-panel space-y-8 hidden">
+                    <div class="glass p-8 rounded-3xl border-slate-800">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold text-white">Notifications</h3>
+                            <span id="unread-count-badge" class="bg-slate-900 border border-slate-800 text-slate-400 text-[10px] px-3.5 py-1.5 rounded-full uppercase font-black tracking-widest">
+                                {{ unread_notifications_count }} Unread
+                            </span>
+                        </div>
+
+                        <div class="space-y-4" id="notifications-list">
+                            {% for n in notifications %}
+                            <div id="notification-item-{{ n.id }}" class="p-5 rounded-2xl border transition-all duration-350 {% if not n.is_read %}bg-slate-900/40 border-slate-800/80 hover:border-[#D4AF37]/30{% else %}bg-slate-950/20 border-slate-900/60 opacity-60{% endif %} flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                                        <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded
+                                            {% if n.notification_type == 'contact_message' %}
+                                                bg-blue-500/10 border border-blue-500/20 text-blue-400
+                                            {% elif n.notification_type == 'new_review' %}
+                                                bg-emerald-500/10 border border-emerald-500/20 text-emerald-400
+                                            {% elif n.notification_type == 'client_signup' %}
+                                                bg-purple-500/10 border border-purple-500/20 text-purple-400
+                                            {% else %}
+                                                bg-amber-500/10 border border-amber-500/20 text-amber-400
+                                            {% endif %}">
+                                            {{ n.get_notification_type_display }}
+                                        </span>
+                                        <span class="text-[10px] text-slate-500 font-medium">{{ n.created_at|date:"Y-m-d H:i" }}</span>
+                                    </div>
+                                    <h4 class="text-white font-bold text-sm">{{ n.title }}</h4>
+                                    <p class="text-slate-400 text-xs mt-1 leading-relaxed">{{ n.message }}</p>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    {% if not n.is_read %}
+                                    <button type="button" 
+                                            onclick="markAsRead({{ n.id }})" 
+                                            class="mark-read-btn px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition">
+                                        Mark Read
+                                    </button>
+                                    {% else %}
+                                    <span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 py-1.5">
+                                        ✓ Read
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="py-16 text-center" id="no-notifications-placeholder">
+                                <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-850 flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-bell-slash text-2xl text-slate-600"></i>
+                                </div>
+                                <h4 class="text-white font-bold text-sm mb-1">All Caught Up!</h4>
+                                <p class="text-slate-500 text-xs max-w-xs mx-auto">You have no new notifications at this time.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    function switchTab(tabName) {
+        // Hide all panels
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.add('hidden');
+        });
+        
+        // Show selected panel
+        const targetPanel = document.getElementById(`panel-${tabName}`);
+        if (targetPanel) {
+            targetPanel.classList.remove('hidden');
+        }
+        
+        // Reset tab buttons classes
+        const buttons = document.querySelectorAll('#settings-tabs button');
+        buttons.forEach(btn => {
+            btn.className = "w-full text-left px-6 py-4 hover:bg-slate-900/50 rounded-2xl text-slate-400 font-bold transition relative";
+        });
+        
+        // Highlight active button
+        const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+        if (activeBtn) {
+            activeBtn.className = "w-full text-left px-6 py-4 bg-slate-900 rounded-2xl border border-slate-800 text-highlight-400 font-bold transition relative";
+        }
+
+        // Set hash without jump
+        if (window.location.hash !== '#' + tabName) {
+            history.pushState(null, null, '#' + tabName);
+        }
+    }
+
+    // Auto-switch tab based on hash
+    function handleHashChange() {
+        const hash = window.location.hash.replace('#', '');
+        if (hash === 'general' || hash === 'security' || hash === 'notifications') {
+            switchTab(hash);
+        } else {
+            switchTab('general');
+        }
+    }
+
+    window.addEventListener('load', handleHashChange);
+    window.addEventListener('hashchange', handleHashChange);
+
+    // CSRF helper
+    function getCsrfToken() {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
+    }
+
+    async function markAsRead(notificationId) {
+        const url = `/api/notifications/${notificationId}/mark-read/`;
+        const csrftoken = getCsrfToken();
+        const item = document.getElementById(`notification-item-${notificationId}`);
+        if (item) {
+            item.style.opacity = '0.5';
+        }
+
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'include'
+            });
+
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
+            if (data.status !== 'success') throw new Error('Operation failed');
+
+            // Success update styling
+            if (item) {
+                item.className = 'p-5 rounded-2xl border transition-all duration-350 bg-slate-950/20 border-slate-900/60 opacity-60 flex flex-col md:flex-row md:items-center justify-between gap-4';
+                item.style.opacity = '';
+                
+                // Replace action button with read span
+                const actionContainer = item.querySelector('.flex-shrink-0');
+                if (actionContainer) {
+                    actionContainer.innerHTML = '<span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 py-1.5">✓ Read</span>';
+                }
+            }
+
+            // Update badge & dot counters
+            const count = data.unread_notifications_count;
+            const badge = document.getElementById('unread-count-badge');
+            if (badge) badge.textContent = `${count} Unread`;
+            
+            const tabDot = document.getElementById('tab-unread-dot');
+            if (tabDot) {
+                if (count > 0) tabDot.classList.remove('hidden');
+                else tabDot.classList.add('hidden');
+            }
+
+            // Update header bell counter dynamically
+            const bellBadge = document.querySelector('a[href*="notifications"] span');
+            if (bellBadge) {
+                if (count > 0) {
+                    bellBadge.textContent = count;
+                    bellBadge.classList.remove('hidden');
+                } else {
+                    bellBadge.remove(); // Remove badge when count is 0
+                }
+            }
+        } catch (err) {
+            console.error('Failed to mark notification as read:', err);
+            alert('Could not update notification status.');
+            if (item) {
+                item.style.opacity = '';
+            }
+        }
+    }
+</script>
 {% endblock %}

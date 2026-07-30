@@ -24,6 +24,7 @@ urlpatterns = [
     path('admin-panel/roadmap/update/<int:step_id>/', views.update_roadmap_status, name='update_roadmap_status'),
     path('admin-panel/roadmap/step/<int:step_id>/update/', views.update_roadmap_step_status, name='update_roadmap_step_status'),
     path('client-dashboard/roadmap/step/<int:step_id>/toggle/', views.toggle_roadmap_step, name='toggle_roadmap_step'),
+    path('api/roadmap/update-status/', views.roadmap_update_status_api, name='roadmap_update_status_api'),
     path('api/clients/<int:client_id>/milestones-status/', views.client_milestone_status_api, name='client_milestone_status_api'),
     path('api/service-analytics/', views.service_analytics_api, name='service_analytics_api'),
     path('api/toggle-service/<int:service_id>/', views.toggle_service, name='toggle_service'),
@@ -33,6 +34,7 @@ urlpatterns = [
     path('experience/', views.experience_page, name='experience_page'),
     path('api/active-services/', views.get_active_services, name='get_active_services'),
     path('api/team/add/', views.add_team_member_inline, name='add_team_member_inline'),
+    path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
 ]
 
 

@@ -9,3 +9,15 @@ def site_settings(request):
         'site_settings': setting,
         'global_site_setting': setting,
     }
+
+
+def notifications_context(request):
+    """Expose unread_notifications_count globally to all templates."""
+    if request.user and request.user.is_authenticated:
+        from .models import Notification
+        count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+    else:
+        count = 0
+    return {
+        'unread_notifications_count': count
+    }

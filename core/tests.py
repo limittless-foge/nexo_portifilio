@@ -43,11 +43,11 @@ class RoadmapTests(TestCase):
         response = self.client.get(reverse('client_dashboard'))
         self.assertEqual(response.status_code, 200)
 
-        # Check that 4 steps exist and are DECLINED
+        # Check that 4 steps exist and are PENDING
         steps = RoadmapStep.objects.filter(client=self.user).order_by('order')
         self.assertEqual(steps.count(), 4)
         for step in steps:
-            self.assertEqual(step.status, 'DECLINED')
+            self.assertEqual(step.status, 'PENDING')
         
         # Verify accurate progress percent in context
         self.assertEqual(response.context['progress_percent'], 0)
@@ -90,7 +90,11 @@ class RoadmapTests(TestCase):
         RoadmapStep.objects.filter(client=self.user).delete()
         create_default_roadmap_steps(self.user)
         step = RoadmapStep.objects.filter(client=self.user).first()
-        self.assertEqual(step.status, 'DECLINED')
+        self.assertEqual(step.status, 'PENDING')
+
+        # Make user staff since roadmap toggling is restricted to staff
+        self.user.is_staff = True
+        self.user.save()
 
         # Toggle to APPROVED
         url = reverse('toggle_roadmap_step', kwargs={'step_id': step.id})
@@ -153,3 +157,173 @@ class BrandingAssetsTests(TestCase):
         # Verify db records
         self.site_setting.refresh_from_db()
         self.assertEqual(self.site_setting.education_external_url, 'https://wisdom-tower.com/ajax')
+
+
+from core.models import SubService, ServiceCategory
+
+class WorkspaceAndAnalyticsTests(TestCase):
+    def setUp(self):
+        # Create staff user
+        self.staff_user = User.objects.create_superuser(username='staffadmin', password='password123')
+        # Create client users
+        self.client_user = User.objects.create_user(username='client1', password='password123')
+        self.other_client = User.objects.create_user(username='client2', password='password123')
+        
+        self.client_profile = ClientProfile.objects.get(user=self.client_user)
+        self.other_profile = ClientProfile.objects.get(user=self.other_client)
+
+        # Seed categories & services
+        self.category = ServiceCategory.objects.create(title='Design', order=1)
+        self.service = SubService.objects.create(
+            service_category=self.category,
+            category='DESIGN',
+            title='Logo Design',
+            short_explanation='Brand identity visual logo'
+        )
+
+    def test_client_can_retrieve_own_analytics(self):
+        self.client.login(username='client1', password='password123')
+        url = reverse('client_analytics_api', kwargs={'client_id': self.client_profile.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_client_cannot_retrieve_others_analytics(self):
+        self.client.login(username='client1', password='password123')
+        url = reverse('client_analytics_api', kwargs={'client_id': self.other_profile.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_staff_can_retrieve_any_client_analytics(self):
+        self.client.login(username='staffadmin', password='password123')
+        url = reverse('client_analytics_api', kwargs={'client_id': self.client_profile.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_staff_service_toggle_on_behalf_of_client(self):
+        self.client.login(username='staffadmin', password='password123')
+        url = reverse('toggle_service', kwargs={'service_id': self.service.id}) + f"?client_id={self.client_profile.user.id}"
+        
+        # Toggle service ON for client1
+        response = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertTrue(data['selected'])
+
+        # Verify client1 has the service selected, but staff does not
+        self.client_profile.refresh_from_db()
+        self.assertTrue(self.client_profile.selected_services.filter(id=self.service.id).exists())
+        
+        staff_profile = ClientProfile.objects.get(user=self.staff_user)
+        self.assertFalse(staff_profile.selected_services.filter(id=self.service.id).exists())
+
+
+from core.models import Notification
+
+class NotificationSystemTests(TestCase):
+    def setUp(self):
+        self.admin1 = User.objects.create_superuser(username='notif_admin1', password='password123')
+        self.admin2 = User.objects.create_superuser(username='notif_admin2', password='password123')
+        self.client_user = User.objects.create_user(username='notif_client', password='password123')
+        
+        # Complete onboarding to avoid redirects in views
+        profile = ClientProfile.objects.get(user=self.client_user)
+        profile.onboarding_completed = True
+        profile.save()
+        
+        # Clear setup-induced notifications
+        Notification.objects.all().delete()
+        
+        # Service details for metrics
+        self.category = ServiceCategory.objects.create(title='Content', order=2)
+        self.subservice = SubService.objects.create(
+            service_category=self.category,
+            category='CONTENT',
+            title='Blog Post Writing',
+            short_explanation='Write SEO optimized blogs'
+        )
+
+    def test_new_client_signup_notification(self):
+        # Create a new non-staff user to trigger signup notification
+        new_client = User.objects.create_user(username='new_signup_user', password='password123')
+        
+        # Verify notification created for each admin
+        admin1_notifs = Notification.objects.filter(recipient=self.admin1, notification_type='client_signup')
+        admin2_notifs = Notification.objects.filter(recipient=self.admin2, notification_type='client_signup')
+        self.assertEqual(admin1_notifs.count(), 1)
+        self.assertEqual(admin2_notifs.count(), 1)
+        self.assertIn("new_signup_user", admin1_notifs.first().message)
+
+    def test_contact_message_notification(self):
+        self.client.login(username='notif_client', password='password123')
+        contact_url = reverse('contact')
+        response = self.client.post(contact_url, {
+            'subject': 'Help Request',
+            'message_body': 'I need help with my account.'
+        })
+        self.assertEqual(response.status_code, 302) # Redirects to home
+        
+        # Verify admin notifications
+        admin_notifs = Notification.objects.filter(recipient=self.admin1, notification_type='contact_message')
+        self.assertEqual(admin_notifs.count(), 1)
+        self.assertEqual(admin_notifs.first().title, "New Contact Message")
+
+    def test_review_submission_notification(self):
+        self.client.login(username='notif_client', password='password123')
+        # Review is submitted via home view POST
+        home_url = reverse('home')
+        response = self.client.post(home_url, {
+            'rating': '5',
+            'comment': 'Awesome services!'
+        })
+        self.assertEqual(response.status_code, 302) # Redirects to home
+        
+        # Verify admin notifications
+        admin_notifs = Notification.objects.filter(recipient=self.admin1, notification_type='new_review')
+        self.assertEqual(admin_notifs.count(), 1)
+        self.assertIn("5-star", admin_notifs.first().message)
+
+    def test_metric_update_client_notification(self):
+        # Login as admin to update metric entries
+        self.client.login(username='notif_admin1', password='password123')
+        url = reverse('metric_entries_api')
+        response = self.client.post(url, {
+            'client_username': 'notif_client',
+            'sub_service_id': self.subservice.id,
+            'value': '10.5',
+            'date': '2026-07-30',
+            'note': 'Good progress'
+        }, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify client notification
+        client_notifs = Notification.objects.filter(recipient=self.client_user, notification_type='metric_update')
+        self.assertEqual(client_notifs.count(), 1)
+        self.assertEqual(client_notifs.first().title, "Analytics Metric Updated")
+        
+        # Staff user should NOT get this notification
+        admin_notifs = Notification.objects.filter(recipient=self.admin1, notification_type='metric_update')
+        self.assertEqual(admin_notifs.count(), 0)
+
+    def test_mark_notification_as_read(self):
+        # Create a notification first
+        notif = Notification.objects.create(
+            recipient=self.client_user,
+            title="Test Notification",
+            message="Sample message",
+            notification_type="metric_update"
+        )
+        self.assertFalse(notif.is_read)
+
+        # Login as client to mark read
+        self.client.login(username='notif_client', password='password123')
+        url = reverse('mark_notification_read', kwargs={'notification_id': notif.id})
+        response = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertEqual(data['unread_notifications_count'], 0)
+        
+        notif.refresh_from_db()
+        self.assertTrue(notif.is_read)

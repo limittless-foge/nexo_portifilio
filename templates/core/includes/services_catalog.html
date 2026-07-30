@@ -336,7 +336,12 @@
             return;
         }
 
-        const url = toggleUrlTemplate.replace('0', serviceId);
+        let url = toggleUrlTemplate.replace('0', serviceId);
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientId = urlParams.get('client_id');
+        if (clientId) {
+            url += `?client_id=${encodeURIComponent(clientId)}`;
+        }
         const csrftoken = getCookie('csrftoken');
 
         try {
@@ -378,11 +383,30 @@
         document.querySelectorAll('[data-subservice-id]').forEach(button => {
             const serviceId = String(button.getAttribute('data-subservice-id'));
             const selected = selectedServiceIds.has(serviceId);
-            button.textContent = selected ? '✓ SELECTED' : '+ SELECT SERVICE';
-            button.classList.toggle('bg-emerald-400', selected);
-            button.classList.toggle('hover:bg-emerald-300', selected);
-            button.classList.toggle('bg-[#D4AF37]', !selected);
-            button.classList.toggle('hover:bg-[#B48F27]', !selected);
+            
+            // Distinguish between the small inline list button and the larger modal buttons
+            const isSmallPreview = button.classList.contains('text-[9px]') || button.closest('.sub-service-item');
+            
+            if (isSmallPreview) {
+                if (selected) {
+                    button.textContent = '✓ SELECTED';
+                    button.className = 'text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition';
+                } else {
+                    button.textContent = 'Toggle';
+                    button.className = 'text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/20 hover:bg-[#D4AF37] hover:text-slate-950 transition';
+                }
+            } else {
+                const isSubserviceModal = button.classList.contains('text-xs') || button.classList.contains('px-5');
+                const baseTextClass = isSubserviceModal ? 'text-xs px-5 py-2.5' : 'text-[10px] px-4 py-2';
+                
+                if (selected) {
+                    button.textContent = '✓ SELECTED';
+                    button.className = `${baseTextClass} rounded-xl font-black uppercase tracking-widest inline-flex items-center justify-center transition bg-emerald-400 text-slate-950 hover:bg-emerald-300`;
+                } else {
+                    button.textContent = '+ SELECT SERVICE';
+                    button.className = `${baseTextClass} rounded-xl font-black uppercase tracking-widest inline-flex items-center justify-center transition bg-[#D4AF37] text-slate-950 hover:bg-[#B48F27]`;
+                }
+            }
         });
     }
 

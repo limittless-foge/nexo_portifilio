@@ -80,6 +80,16 @@
                 </div>
 
                 {% if user.is_authenticated %}
+                    <!-- Bell Notification Icon -->
+                    <a href="{% url 'profile_settings' %}#notifications" class="relative text-slate-400 hover:text-white transition flex items-center justify-center p-2 rounded-full hover:bg-slate-900 border border-transparent hover:border-slate-850 mr-1" title="Notifications">
+                        <i class="fas fa-bell text-sm"></i>
+                        {% if unread_notifications_count > 0 %}
+                            <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-[8px] font-black flex items-center justify-center border border-slate-950 shadow-lg shadow-red-500/20">
+                                {{ unread_notifications_count }}
+                            </span>
+                        {% endif %}
+                    </a>
+
                     <div class="relative group" id="userDropdown">
                         <button class="flex items-center space-x-3 focus:outline-none" onclick="toggleDropdown()">
                             <div class="w-8 h-8 rounded-full overflow-hidden border border-slate-700 bg-slate-800">

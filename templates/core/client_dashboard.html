@@ -30,7 +30,7 @@
                 </div>
 
                 <div class="flex items-center space-x-3 flex-shrink-0">
-                    <a href="{% url 'select_services' %}"
+                    <a href="{% url 'services_catalog' %}{% if user.is_staff %}?client_id={{ dashboard_user.id }}{% endif %}"
                        class="px-5 py-2.5 bg-slate-900 border border-slate-800 hover:border-accent/40 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-accent/10">
                         <i class="fas fa-pen mr-2"></i>Edit Services
                     </a>
@@ -134,9 +134,15 @@
                             <i class="fas fa-layer-group text-accent mr-3"></i>
                             Your Selected Services
                         </h3>
-                        <span id="active-services-count" class="active-service-count bg-slate-900 border border-slate-800 text-slate-400 text-[10px] px-3.5 py-1.5 rounded-full uppercase font-black tracking-widest">
-                            {{ selected_services.count }} Active
-                        </span>
+                        <div class="flex items-center gap-3">
+                            <a href="{% url 'services_catalog' %}{% if user.is_staff %}?client_id={{ dashboard_user.id }}{% endif %}"
+                               class="px-3.5 py-1.5 bg-highlight-400/10 border border-highlight-400/25 hover:bg-highlight-400/20 text-highlight-400 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center gap-1">
+                                <i class="fas fa-plus text-[8px]"></i> Browse Services
+                            </a>
+                            <span id="active-services-count" class="active-service-count bg-slate-900 border border-slate-800 text-slate-400 text-[10px] px-3.5 py-1.5 rounded-full uppercase font-black tracking-widest">
+                                {{ selected_services.count }} Active
+                            </span>
+                        </div>
                     </div>
 
                     {% if grouped_services %}
@@ -180,7 +186,7 @@
                             <p class="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
                                 You haven't chosen any services yet. Start building your toolkit by selecting from our service catalog.
                             </p>
-                            <a href="{% url 'services_catalog' %}"
+                            <a href="{% url 'services_catalog' %}{% if user.is_staff %}?client_id={{ dashboard_user.id }}{% endif %}"
                                class="inline-block px-8 py-3 bg-highlight-400 hover:bg-lime-300 text-slate-950 text-xs font-black uppercase tracking-widest rounded-xl transition shadow-lg shadow-highlight-400/20">
                                 <i class="fas fa-plus mr-2"></i>Browse Services
                             </a>
@@ -217,43 +223,68 @@
                         <!-- Timeline steps (dynamic from RoadmapStep) -->
                         <div class="space-y-4" id="milestones-timeline-container">
                             {% for step in roadmap_steps %}
-                            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/35 border border-slate-850 hover:border-slate-800/80 transition-all duration-300" data-step="{{ step.order }}" data-id="{{ step.id }}" data-step-status="{{ step.status }}">
+                            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/35 border border-slate-850 hover:border-slate-800/80 transition-all duration-300"
+                                 data-step="{{ step.order }}" data-id="{{ step.id }}" data-step-status="{{ step.status }}">
                                 <div class="flex items-start space-x-3 min-w-0">
                                     <div class="w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator
                                         {% if step.status == 'APPROVED' %}
                                             bg-emerald-500/20 border border-emerald-500/50 text-emerald-400
-                                        {% elif step.status == 'DECLINED' %}
-                                            bg-rose-500/10 border border-rose-500/30 text-rose-400
                                         {% else %}
                                             bg-amber-500/10 border border-amber-500/30 text-amber-400
                                         {% endif %}"
                                     >
                                         {% if step.status == 'APPROVED' %}
                                             <i class="fas fa-check text-[8px] milestone-check-icon"></i>
-                                        {% elif step.status == 'DECLINED' %}
-                                            <i class="fas fa-times text-[8px] milestone-check-icon"></i>
                                         {% else %}
                                             <i class="fas fa-clock text-[8px] milestone-check-icon"></i>
                                         {% endif %}
                                     </div>
                                     <div class="min-w-0">
-                                        <h4 class="text-xs font-black milestone-title-label {% if step.status == 'APPROVED' %}text-emerald-400{% elif step.status == 'DECLINED' %}text-rose-400{% else %}text-amber-400{% endif %}">{{ step.title }}</h4>
+                                        <h4 class="text-xs font-black milestone-title-label {% if step.status == 'APPROVED' %}text-emerald-400{% else %}text-amber-400{% endif %}">{{ step.title }}</h4>
                                         <p class="text-slate-400 text-[10px] mt-0.5 leading-relaxed truncate">{{ step.description }}</p>
                                     </div>
                                 </div>
+
                                 <div class="flex-shrink-0 ml-2 milestone-action-container">
+                                    {% if user.is_staff %}
+                                    <!-- ── Admin Controls (3-state) ── -->
+                                    <div class="flex items-center gap-1" id="admin-step-controls-{{ step.id }}">
+                                        <button type="button"
+                                                onclick="adminSetStepStatus({{ step.id }}, 'APPROVED')"
+                                                title="Approve"
+                                                class="admin-roadmap-btn w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200
+                                                       {% if step.status == 'APPROVED' %}bg-emerald-500/20 border border-emerald-500/40 text-emerald-400{% else %}bg-slate-800/60 border border-slate-700 text-slate-500 hover:bg-emerald-500/15 hover:border-emerald-500/30 hover:text-emerald-400{% endif %}"
+                                                data-step-id="{{ step.id }}" data-target-status="APPROVED">
+                                            <i class="fas fa-check text-[8px]"></i>
+                                        </button>
+                                        <button type="button"
+                                                onclick="adminSetStepStatus({{ step.id }}, 'DECLINED')"
+                                                title="Decline"
+                                                class="admin-roadmap-btn w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200
+                                                       {% if step.status == 'DECLINED' %}bg-rose-500/20 border border-rose-500/40 text-rose-400{% else %}bg-slate-800/60 border border-slate-700 text-slate-500 hover:bg-rose-500/15 hover:border-rose-500/30 hover:text-rose-400{% endif %}"
+                                                data-step-id="{{ step.id }}" data-target-status="DECLINED">
+                                            <i class="fas fa-times text-[8px]"></i>
+                                        </button>
+                                        <button type="button"
+                                                onclick="adminSetStepStatus({{ step.id }}, 'PENDING')"
+                                                title="Reset to Pending"
+                                                class="admin-roadmap-btn w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200
+                                                       {% if step.status == 'PENDING' %}bg-amber-500/20 border border-amber-500/40 text-amber-400{% else %}bg-slate-800/60 border border-slate-700 text-slate-500 hover:bg-amber-500/15 hover:border-amber-500/30 hover:text-amber-400{% endif %}"
+                                                data-step-id="{{ step.id }}" data-target-status="PENDING">
+                                            <i class="fas fa-undo text-[7px]"></i>
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <!-- ── Client Read-only Badge ── -->
                                     {% if step.status == 'APPROVED' %}
                                         <span class="roadmap-step-badge px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-wider flex items-center gap-1">
                                             ✓ APPROVED
-                                        </span>
-                                    {% elif step.status == 'DECLINED' %}
-                                        <span class="roadmap-step-badge px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-black tracking-wider flex items-center gap-1">
-                                            ✕ DECLINED
                                         </span>
                                     {% else %}
                                         <span class="roadmap-step-badge px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[8px] font-black tracking-wider flex items-center gap-1">
                                             ⏳ PENDING
                                         </span>
+                                    {% endif %}
                                     {% endif %}
                                 </div>
                             </div>
@@ -308,6 +339,7 @@
                             <select id="analytics-time-filter" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-white text-[10px] font-black uppercase tracking-wider focus:outline-none focus:border-[#D4AF37] transition">
                                 <option value="30">Last 30 Days</option>
                                 <option value="7">Last 7 Days</option>
+                                <option value="yesterday">Yesterday</option>
                                 <option value="365">This Year</option>
                             </select>
                             {% if user.is_superuser %}
@@ -489,6 +521,170 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
         {{ profile.id|json_script:"profile-id-data" }}
         <script>
+        // ── Admin Roadmap Controls ────────────────────────────────────────────────
+        // Called by the Approve / Decline / Pending buttons on each roadmap step.
+        // Only rendered when user.is_staff — server also enforces staff-only at the
+        // /api/roadmap/update-status/ endpoint, so double protection in place.
+
+        async function adminSetStepStatus(stepId, targetStatus) {
+            const csrftoken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+            const btnGroup = document.getElementById(`admin-step-controls-${stepId}`);
+
+            // Optimistic visual feedback: dim buttons while saving
+            if (btnGroup) btnGroup.style.opacity = '0.5';
+
+            try {
+                const resp = await fetch('{% url "roadmap_update_status_api" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ step_id: stepId, status: targetStatus }),
+                });
+
+                if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+                const data = await resp.json();
+                if (data.status !== 'success') throw new Error(data.error || 'Update failed');
+
+                _adminUpdateStepDOM(data.step_id, data.new_status, data.progress_percent);
+            } catch (err) {
+                console.error('adminSetStepStatus failed:', err);
+                alert(`Failed to update roadmap step: ${err.message}`);
+            } finally {
+                if (btnGroup) btnGroup.style.opacity = '1';
+            }
+        }
+
+        function _adminUpdateStepDOM(stepId, status, progressPercent) {
+            const stepEl = document.querySelector(`[data-id="${stepId}"]`);
+            if (!stepEl) return;
+
+            stepEl.dataset.stepStatus = status;
+
+            // ─ Indicator dot ─
+            const indicator = stepEl.querySelector('.milestone-indicator');
+            if (indicator) {
+                indicator.className = indicator.className
+                    .replace(/bg-\w+-\d+\/\d+\s*/g, '')
+                    .replace(/border-\w+-\d+\/\d+\s*/g, '')
+                    .replace(/text-\w+-\d+\s*/g, '');
+                if (status === 'APPROVED') {
+                    indicator.className += ' bg-emerald-500/20 border border-emerald-500/50 text-emerald-400';
+                    indicator.innerHTML = '<i class="fas fa-check text-[8px] milestone-check-icon"></i>';
+                } else if (status === 'DECLINED') {
+                    indicator.className += ' bg-rose-500/10 border border-rose-500/30 text-rose-400';
+                    indicator.innerHTML = '<i class="fas fa-times text-[8px] milestone-check-icon"></i>';
+                } else {
+                    indicator.className += ' bg-amber-500/10 border border-amber-500/30 text-amber-400';
+                    indicator.innerHTML = '<i class="fas fa-clock text-[8px] milestone-check-icon"></i>';
+                }
+            }
+
+            // ─ Title colour ─
+            const title = stepEl.querySelector('.milestone-title-label');
+            if (title) {
+                title.className = title.className
+                    .replace(/text-\w+-\d+\s*/g, '') + ' ';
+                if (status === 'APPROVED') title.className += 'text-emerald-400';
+                else if (status === 'DECLINED') title.className += 'text-rose-400';
+                else title.className += 'text-amber-400';
+            }
+
+            // ─ Admin button active states ─
+            const btnGroup = document.getElementById(`admin-step-controls-${stepId}`);
+            if (btnGroup) {
+                const styleMap = {
+                    APPROVED: { active: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400', hover: 'bg-slate-800/60 border-slate-700 text-slate-500 hover:bg-emerald-500/15 hover:border-emerald-500/30 hover:text-emerald-400' },
+                    DECLINED: { active: 'bg-rose-500/20 border-rose-500/40 text-rose-400',    hover: 'bg-slate-800/60 border-slate-700 text-slate-500 hover:bg-rose-500/15 hover:border-rose-500/30 hover:text-rose-400' },
+                    PENDING:  { active: 'bg-amber-500/20 border-amber-500/40 text-amber-400', hover: 'bg-slate-800/60 border-slate-700 text-slate-500 hover:bg-amber-500/15 hover:border-amber-500/30 hover:text-amber-400' },
+                };
+                btnGroup.querySelectorAll('.admin-roadmap-btn').forEach(btn => {
+                    const tgt = btn.dataset.targetStatus;
+                    const isActive = tgt === status;
+                    // Reset classes then apply correct set
+                    btn.className = 'admin-roadmap-btn w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 border ' + (isActive ? styleMap[tgt].active : styleMap[tgt].hover);
+                });
+            }
+
+            // ─ Progress bar + label ─
+            const progressLabel = document.getElementById('onboarding-progress-percentage-label');
+            const progressBar   = document.getElementById('onboarding-progress-bar');
+            if (progressLabel) progressLabel.textContent = `${progressPercent}%`;
+            if (progressBar) {
+                progressBar.style.width = progressPercent > 0 ? `${progressPercent}%` : '4%';
+                progressBar.className = progressPercent > 0
+                    ? 'h-full bg-gradient-to-r from-emerald-500 to-amber-400 transition-all duration-700'
+                    : 'h-full bg-slate-700 transition-all duration-700';
+            }
+
+            // ─ Tick labels ─
+            document.querySelectorAll('#onboarding-step-labels [data-progress-threshold]').forEach(tick => {
+                const threshold = parseInt(tick.dataset.progressThreshold, 10) || 0;
+                tick.className = threshold <= progressPercent
+                    ? 'text-[8px] font-black uppercase text-emerald-400'
+                    : 'text-[8px] font-black uppercase text-slate-700';
+            });
+
+            // Check if all steps are approved to unlock interactive analytics
+            const allSteps = document.querySelectorAll('#milestones-timeline-container [data-step-status]');
+            let allApproved = allSteps.length > 0;
+            allSteps.forEach(el => {
+                if (el.dataset.stepStatus !== 'APPROVED') {
+                    allApproved = false;
+                }
+            });
+
+            const activeContainer = document.getElementById('analytics-active-container');
+            const lockedContainer = document.getElementById('locked-overlay-container');
+            if (allApproved) {
+                if (activeContainer) activeContainer.classList.remove('hidden');
+                if (lockedContainer) lockedContainer.classList.add('hidden');
+                
+                // Fetch active services and render graphs
+                const chartsEl = document.getElementById('analytics-charts');
+                if (chartsEl) {
+                    const clientUsername = chartsEl.getAttribute('data-client-username');
+                    if (clientUsername) {
+                        if (typeof fetchActiveServices === 'function') {
+                            fetchActiveServices(clientUsername).then(activeServices => {
+                                if (typeof renderGraphs === 'function') {
+                                    renderGraphs(null, activeServices);
+                                }
+                            });
+                        }
+                    }
+                }
+            } else {
+                if (activeContainer) activeContainer.classList.add('hidden');
+                if (lockedContainer) lockedContainer.classList.remove('hidden');
+
+                // Update locked overlay items status
+                const statusMap = {};
+                allSteps.forEach(el => {
+                    const titleEl = el.querySelector('.milestone-title-label');
+                    if (titleEl) {
+                        const titleText = titleEl.textContent.trim().toLowerCase();
+                        statusMap[titleText] = el.dataset.stepStatus;
+                    }
+                });
+                updateLockedOverlay({
+                    services_selected_status: statusMap['services selected'] || 'PENDING',
+                    team_assignment_status: statusMap['team assignment'] || 'PENDING',
+                    kickoff_call_status: statusMap['kickoff call'] || 'PENDING',
+                    deliverables_begin_status: statusMap['deliverables begin'] || 'PENDING',
+                });
+            }
+        }
+        // ── End Admin Roadmap Controls ───────────────────────────────────────────
+        if (typeof fetchActiveServices !== 'function') {
+            var fetchActiveServices = function(clientUsername) {
+                return Promise.resolve([]);
+            };
+        }
+
         (function () {
             const profileId = JSON.parse(document.getElementById('profile-id-data').textContent);
             const goldColor  = '#D4AF37';
@@ -564,16 +760,9 @@
                                         <i class="fas fa-check text-[7px]"></i> APPROVED
                                     </span>
                                 `;
-                            } else if (normalizedStatus === 'DECLINED') {
-                                indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-rose-500/10 border border-rose-500/30 text-rose-400';
-                                indicator.innerHTML = '<i class="fas fa-times text-[8px] milestone-check-icon"></i>';
-                                title.className = 'text-xs font-black milestone-title-label text-rose-400';
-                                actionContainer.innerHTML = `
-                                    <span class="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-black tracking-wider flex items-center gap-1">
-                                        <i class="fas fa-times text-[7px]"></i> DECLINED
-                                    </span>
-                                `;
                             } else {
+                                // Both DECLINED and PENDING display as PENDING to clients —
+                                // only admins can set/see DECLINED from the admin command panel.
                                 indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-amber-500/10 border border-amber-500/30 text-amber-400';
                                 indicator.innerHTML = '<i class="fas fa-clock text-[8px] milestone-check-icon"></i>';
                                 title.className = 'text-xs font-black milestone-title-label text-amber-400';
@@ -627,10 +816,8 @@
                         if (normalizedStatus === 'APPROVED') {
                             el.className = 'font-bold text-emerald-400';
                             el.innerHTML = '<i class="fas fa-check mr-1"></i>Approved';
-                        } else if (normalizedStatus === 'DECLINED') {
-                            el.className = 'font-bold text-rose-400';
-                            el.innerHTML = '<i class="fas fa-times mr-1"></i>Declined';
                         } else {
+                            // DECLINED shown as Pending to clients — admin-only distinction
                             el.className = 'font-bold text-amber-400';
                             el.innerHTML = '<i class="fas fa-clock mr-1"></i>Pending';
                         }
@@ -673,7 +860,45 @@
 
                 let metricData = {};
                 try {
-                    const url = `/api/metric-entries/?client_username=${encodeURIComponent(clientUsername)}`;
+                    const filterEl = document.getElementById('analytics-time-filter');
+                    const filterValue = filterEl ? filterEl.value : '30';
+
+                    function formatDateLocal(date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    }
+
+                    let startDateStr = '';
+                    let endDateStr = '';
+                    const today = new Date();
+
+                    if (filterValue === 'yesterday') {
+                        const yesterday = new Date(today);
+                        yesterday.setDate(today.getDate() - 1);
+                        startDateStr = formatDateLocal(yesterday);
+                        endDateStr = formatDateLocal(yesterday);
+                    } else if (filterValue === '7') {
+                        const past = new Date(today);
+                        past.setDate(today.getDate() - 7);
+                        startDateStr = formatDateLocal(past);
+                        endDateStr = formatDateLocal(today);
+                    } else if (filterValue === '30') {
+                        const past = new Date(today);
+                        past.setDate(today.getDate() - 30);
+                        startDateStr = formatDateLocal(past);
+                        endDateStr = formatDateLocal(today);
+                    } else if (filterValue === '365') {
+                        startDateStr = `${today.getFullYear()}-01-01`;
+                        endDateStr = formatDateLocal(today);
+                    }
+
+                    let url = `/api/metric-entries/?client_username=${encodeURIComponent(clientUsername)}`;
+                    if (startDateStr && endDateStr) {
+                        url += `&start_date=${startDateStr}&end_date=${endDateStr}`;
+                    }
+
                     const resp = await fetch(url);
                     const res  = await resp.json();
 
@@ -889,38 +1114,9 @@
                 return match ? decodeURIComponent(match[2]) : '';
             }
 
-            async function toggleStep(stepId) {
-                const csrftoken = getCookie('csrftoken');
-                try {
-                    const resp = await fetch(`/client-dashboard/roadmap/step/${stepId}/toggle/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': csrftoken,
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: ``,
-                    });
-
-                    if (!resp.ok) {
-                        throw new Error(`Server returned ${resp.status}`);
-                    }
-
-                    const data = await resp.json();
-                    if (data.status !== 'success') {
-                        throw new Error(data.error || 'Unable to toggle roadmap step.');
-                    }
-
-                    updateRoadmapStepUI(data.step_id, data.new_status, data.progress_percent);
-                } catch (error) {
-                    console.error('Failed to toggle roadmap step:', error);
-                    alert('Unable to update roadmap status. Please refresh and try again.');
-                }
-            }
-
-            // Expose as window global and alias for compatibility
-            window.toggleStep = toggleStep;
-            window.toggleRoadmapStep = toggleStep;
+            // NOTE: Roadmap step toggling is admin-only.
+            // The client dashboard is read-only for roadmap steps.
+            // Admin controls live at /admin-panel/ (milestone_admin_dashboard view).
 
             function updateRoadmapStepUI(stepId, status, progressPercent) {
                 const stepEl = document.querySelector(`[data-id="${stepId}"]`);
@@ -940,20 +1136,22 @@
                         title.className = 'text-xs font-black milestone-title-label text-emerald-400';
                     }
                     if (btn) {
-                        btn.className = 'roadmap-step-badge px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-wider flex items-center gap-1 hover:bg-emerald-500/20 focus:outline-none transition-all duration-300';
+                        btn.className = 'roadmap-step-badge px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-wider flex items-center gap-1';
                         btn.innerHTML = '✓ APPROVED';
                     }
                 } else {
+                    // Any non-APPROVED state (including DECLINED) renders as PENDING to clients.
+                    // Admins manage DECLINED status from their command panel only.
                     if (indicator) {
-                        indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-rose-500/10 border border-rose-500/30 text-rose-400';
-                        indicator.innerHTML = '<i class="fas fa-times text-[8px] milestone-check-icon"></i>';
+                        indicator.className = 'w-6.5 h-6.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 milestone-indicator bg-amber-500/10 border border-amber-500/30 text-amber-400';
+                        indicator.innerHTML = '<i class="fas fa-clock text-[8px] milestone-check-icon"></i>';
                     }
                     if (title) {
-                        title.className = 'text-xs font-black milestone-title-label text-rose-400';
+                        title.className = 'text-xs font-black milestone-title-label text-amber-400';
                     }
                     if (btn) {
-                        btn.className = 'roadmap-step-badge px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-black tracking-wider flex items-center gap-1 hover:bg-rose-500/20 focus:outline-none transition-all duration-300';
-                        btn.innerHTML = '✕ DECLINED';
+                        btn.className = 'roadmap-step-badge px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[8px] font-black tracking-wider flex items-center gap-1';
+                        btn.innerHTML = '⏳ PENDING';
                     }
                 }
 
