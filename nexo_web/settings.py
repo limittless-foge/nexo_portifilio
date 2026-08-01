@@ -154,18 +154,20 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # <--- ADD THIS
-# STATICFILES_DIRS = [BASE_DIR / 'static'] # Optional: include if you have a top-level /static folder
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Enable WhiteNoise compression and caching
+# Modern WhiteNoise configuration (Django 4.2+)
 STORAGES = {
     "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+# Explicit definition to satisfy legacy package references
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
