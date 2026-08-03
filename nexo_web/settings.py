@@ -164,7 +164,6 @@ STORAGES = {
     },
 }
 
-# Legacy compatibility for packages that still read STATICFILES_STORAGE.
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 # Media files
