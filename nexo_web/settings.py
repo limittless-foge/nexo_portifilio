@@ -30,8 +30,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-local-dev-key-change-
 
 
 # Turns DEBUG off on Render ('true'), but keeps DEBUG = True on local machine
-DEBUG = os.environ.get('RENDER') != 'true'
-
+# DEBUG = os.environ.get('RENDER') != 'true'
+DEBUG = True
 # 2. Configure ALLOWED_HOSTS for local + Render + your domain
 ALLOWED_HOSTS = [
     'wisdomtower.tech',
