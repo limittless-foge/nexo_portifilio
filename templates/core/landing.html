@@ -76,4 +76,103 @@
 <!-- Unified Services Catalog Section -->
 {% include 'core/includes/services_catalog.html' %}
 
+<!-- Public Experience Section -->
+<section id="experience" class="py-24 bg-slate-950">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-black uppercase tracking-widest mb-4">
+                <i class="fas fa-layer-group"></i>
+                <span>Experience Portfolio</span>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">Experience, Jobs We’ve Done</h2>
+            <p class="text-slate-400 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
+                Explore the public portfolio highlights across video, web, design, marketing, and data-driven delivery work.
+            </p>
+        </div>
+
+        {% for group in project_groups %}
+        <div class="mb-16 glass p-8 md:p-10 rounded-3xl border-slate-800 relative overflow-hidden" id="section-{{ group.category.slug }}">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h3 class="text-2xl font-black text-white mb-1">{{ group.category.name }}</h3>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">
+                        {{ group.category.name }} showcase
+                    </p>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20">
+                    {{ group.category.name }}
+                </span>
+            </div>
+
+            {% if group.projects %}
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for project in group.projects %}
+                <div class="project-card group bg-slate-900/60 rounded-2xl border border-slate-800/80 overflow-hidden hover:border-accent/40 transition duration-500 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="aspect-video relative overflow-hidden bg-slate-950">
+                            {% if project.is_playable and project.video %}
+                                <video class="w-full h-full object-cover" controls playsinline preload="metadata" poster="{% if project.image %}{{ project.image.url }}{% elif project.image_url %}{{ project.image_url }}{% endif %}">
+                                    <source src="{{ project.video.url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            {% elif project.image %}
+                                <img src="{{ project.image.url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="{{ project.title }}">
+                            {% elif project.image_url %}
+                                <img src="{{ project.image_url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="{{ project.title }}">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center bg-slate-950 text-slate-500 p-6">
+                                    <div class="text-center">
+                                        <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center mb-3 text-2xl">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                        <span class="text-xs uppercase tracking-widest">No media available</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="p-6">
+                            <h4 class="text-xl font-black text-white mb-2">{{ project.title }}</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed mb-4">{{ project.description }}</p>
+                        </div>
+                    </div>
+
+                    <div class="px-6 pb-6">
+                        {% if project.technology_stack %}
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            {% for tech in project.technology_stack.split %}
+                                <span class="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400">
+                                    {{ tech|cut:"," }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if project.case_study_url %}
+                        <a href="{{ project.case_study_url }}" target="_blank" class="text-xs font-black text-accent hover:underline inline-flex items-center gap-1.5">
+                            View Case Study <i class="fas fa-external-link-alt text-[9px]"></i>
+                        </a>
+                        {% elif project.media_type == 'VIDEO' %}
+                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Video Showcase</span>
+                        {% else %}
+                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Portfolio Item</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-500 text-sm italic">
+                No {{ group.category.name }} entries have been published yet.
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-500 text-sm italic">
+            No public experience entries have been published yet.
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
 {% endblock %}

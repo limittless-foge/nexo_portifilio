@@ -18,16 +18,18 @@ from .forms import SiteSettingForm, ProjectForm
 
 def home(request):
     team_members = TeamMember.objects.all().order_by('order')
-    if not request.user.is_authenticated:
-        return render(request, 'core/landing.html', {'team_members': team_members})
-    
-    # Force onboarding flow for regular clients
-    if not request.user.is_staff:
-        profile, created = ClientProfile.objects.get_or_create(user=request.user)
-        if not profile.onboarding_completed:
+    categories = ServiceCategory.objects.all().prefetch_related('subservices').order_by('order')
+    fallback_categories = []
+    selected_service_ids = []
+
+    if request.user.is_authenticated:
+        profile, _ = ClientProfile.objects.get_or_create(user=request.user)
+        selected_service_ids = list(profile.selected_services.values_list('id', flat=True))
+
+        if not request.user.is_staff and not profile.onboarding_completed:
             return redirect('select_services')
-    
-    if request.method == 'POST':
+
+    if request.method == 'POST' and request.user.is_authenticated:
         rating = request.POST.get('rating')
         comment = request.POST.get('comment')
         if rating and comment:
@@ -51,24 +53,141 @@ def home(request):
             return redirect('home')
 
     reviews = Review.objects.all().select_related('user').order_by('-created_at')
-    services = Service.objects.all().order_by('order')
-    categories = ServiceCategory.objects.all().prefetch_related('subservices').order_by('order')
-    selected_service_ids = []
-    if request.user.is_authenticated:
-        profile, _ = ClientProfile.objects.get_or_create(user=request.user)
-        selected_service_ids = list(profile.selected_services.values_list('id', flat=True))
-
     projects = Project.objects.all().order_by('-created_at')
     site_setting = SiteSetting.objects.first()
-    return render(request, 'core/dashboard.html', {
+
+    ProjectCategory.ensure_standard_categories()
+    standard_slugs = [slug for slug, _, _ in ProjectCategory.STANDARD_CATEGORIES]
+    project_categories = ProjectCategory.objects.filter(slug__in=standard_slugs).order_by('order')
+    project_groups = []
+    for category in project_categories:
+        group_projects = category.projects.all().order_by('-created_at')
+        if category.slug == 'video-experience':
+            for project in group_projects:
+                project.is_playable = bool(project.video)
+        project_groups.append({
+            'category': category,
+            'projects': group_projects,
+        })
+
+    if not categories.exists():
+        fallback_categories = [
+            {
+                'title': 'Graphic & Print Design',
+                'icon_class': 'fas fa-palette',
+                'description': 'Visual identity crafted for print and digital impact.',
+                'subservices': [
+                    'Visual communication & brand identity',
+                    'Presentation slide design (PowerPoint, Google Slides, Canva)',
+                    'Book covers & eBook design',
+                    'Resume/CV design',
+                    'Posters, flyers, brochures & leaflets',
+                    'Business cards, stickers & digital artwork',
+                ],
+            },
+            {
+                'title': 'Writing & Editorial',
+                'icon_class': 'fas fa-pen-nib',
+                'description': 'Words that persuade, inform, and convert.',
+                'subservices': [
+                    'Article and blog writing',
+                    'Website content writing',
+                    'Copywriting (ads, product descriptions)',
+                    'Scriptwriting (YouTube, podcasts, short films)',
+                    'Speech writing & creative fiction stories',
+                    'Technical writing, proposal & grant writing',
+                    'Editing, proofreading, rewriting & paraphrasing',
+                ],
+            },
+            {
+                'title': 'Academic & Research Support',
+                'icon_class': 'fas fa-graduation-cap',
+                'description': 'Rigorous research and academic formatting.',
+                'subservices': [
+                    'Thesis & dissertation writing support',
+                    'Academic editing & formatting (APA, MLA, Chicago, Vancouver)',
+                    'Research summaries, proposals & abstracts',
+                    'Referencing & citation management',
+                    'Plagiarism checking & reduction',
+                    'PowerPoint presentations for research defense',
+                ],
+            },
+            {
+                'title': 'Data & Tech Solutions',
+                'icon_class': 'fas fa-database',
+                'description': 'Custom web software, APIs, and analytics engineering.',
+                'subservices': [
+                    'Custom website & web app development',
+                    'E-commerce & business system development',
+                    'API integration & backend systems',
+                    'Data analysis & business intelligence dashboards',
+                    'Automation & workflow scripting',
+                    'Digital tools & SaaS product consulting',
+                ],
+            },
+            {
+                'title': 'Web & Digital Marketing',
+                'icon_class': 'fas fa-bullhorn',
+                'description': 'Strategies that grow traffic, leads, and conversions.',
+                'subservices': [
+                    'SEO strategy & implementation',
+                    'Social media management & content calendars',
+                    'Paid advertising (Google Ads, Meta Ads)',
+                    'Email marketing campaigns',
+                    'Content strategy & editorial planning',
+                    'Influencer and affiliate marketing coordination',
+                ],
+            },
+            {
+                'title': 'Business Strategy & Admin',
+                'icon_class': 'fas fa-briefcase',
+                'description': 'Professional frameworks to grow and manage your enterprise.',
+                'subservices': [
+                    'Business plan writing',
+                    'Market research & competitor analysis',
+                    'Financial modeling & projections',
+                    'Virtual assistant services',
+                    'HR & recruitment consulting',
+                    'Startup advisory & pitch deck creation',
+                ],
+            },
+            {
+                'title': 'Education & Multimedia',
+                'icon_class': 'fas fa-chalkboard-teacher',
+                'description': 'Interactive e-learning content and instructional media.',
+                'subservices': [
+                    'E-learning course creation',
+                    'Instructional video production & editing',
+                    'Motion graphics & animated explainers',
+                    'Training materials & workshop content',
+                    'Podcast editing & audio production',
+                    'YouTube channel management & content strategy',
+                ],
+            },
+        ]
+
+    template_name = 'core/dashboard.html' if request.user.is_authenticated else 'core/landing.html'
+    context = {
         'reviews': reviews,
-        'services': services,
         'projects': projects,
         'site_setting': site_setting,
         'team_members': team_members,
         'categories': categories,
+        'fallback_categories': fallback_categories,
         'selected_service_ids': selected_service_ids,
-    })
+        'project_categories': project_categories,
+        'project_groups': project_groups,
+        'site_settings': site_setting,
+    }
+
+    if request.user.is_authenticated and request.user.is_staff:
+        return render(request, template_name, context)
+
+    if request.user.is_authenticated:
+        context['services'] = Service.objects.all().order_by('order')
+        return render(request, 'core/dashboard.html', context)
+
+    return render(request, 'core/landing.html', context)
 
 
 def staff_check(user):
