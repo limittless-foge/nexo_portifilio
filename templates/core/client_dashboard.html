@@ -8,14 +8,14 @@
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-slate-950 py-24 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-slate-950 py-20 px-3 sm:px-6 lg:px-8 mobile-shell">
     <div class="max-w-6xl mx-auto">
 
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- DASHBOARD HEADER & QUICK STATS                         -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <div class="glass p-8 md:p-10 rounded-3xl border-slate-800 mb-8">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="glass p-5 sm:p-8 md:p-10 rounded-3xl border-slate-800 mb-8 mobile-card">
+            <div class="flex flex-col gap-5 md:flex-row md:items-center justify-between">
                 <div>
                     <div class="flex items-center space-x-3 mb-3">
                         <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
@@ -29,13 +29,13 @@
                     </p>
                 </div>
 
-                <div class="flex items-center space-x-3 flex-shrink-0">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-shrink-0 w-full sm:w-auto">
                     <a href="{% url 'services_catalog' %}{% if user.is_staff %}?client_id={{ dashboard_user.id }}{% endif %}"
-                       class="px-5 py-2.5 bg-slate-900 border border-slate-800 hover:border-accent/40 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-accent/10">
+                       class="w-full sm:w-auto text-center px-5 py-2.5 bg-slate-900 border border-slate-800 hover:border-accent/40 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-accent/10">
                         <i class="fas fa-pen mr-2"></i>Edit Services
                     </a>
                     <a href="{% url 'contact' %}"
-                       class="px-5 py-2.5 bg-accent/10 border border-accent/30 hover:bg-accent/20 text-accent text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300">
+                       class="w-full sm:w-auto text-center px-5 py-2.5 bg-accent/10 border border-accent/30 hover:bg-accent/20 text-accent text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300">
                         <i class="fas fa-paper-plane mr-2"></i>Contact Us
                     </a>
                 </div>
@@ -69,7 +69,7 @@
 
             <!-- ─── Left Column (1 of 3): Service Account ─── -->
             <div class="lg:col-span-1">
-                <div class="glass p-8 rounded-3xl border-slate-800 relative overflow-hidden h-full">
+                <div class="glass p-5 sm:p-8 rounded-3xl border-slate-800 relative overflow-hidden h-full mobile-card">
 
                     <div class="relative">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center">
@@ -128,13 +128,13 @@
 
             <!-- ─── Right Column (2 of 3): Service Catalog Viewport ─── -->
             <div class="lg:col-span-2">
-                <div class="glass p-8 rounded-3xl border-slate-800 h-full">
-                    <div class="flex items-center justify-between mb-8">
+                <div class="glass p-5 sm:p-8 rounded-3xl border-slate-800 h-full mobile-card">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
                         <h3 class="text-xl font-bold text-white flex items-center">
                             <i class="fas fa-layer-group text-accent mr-3"></i>
                             Your Selected Services
                         </h3>
-                        <div class="flex items-center gap-3">
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                             <a href="{% url 'services_catalog' %}{% if user.is_staff %}?client_id={{ dashboard_user.id }}{% endif %}"
                                class="px-3.5 py-1.5 bg-highlight-400/10 border border-highlight-400/25 hover:bg-highlight-400/20 text-highlight-400 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center gap-1">
                                 <i class="fas fa-plus text-[8px]"></i> Browse Services
@@ -149,14 +149,14 @@
                         <div class="space-y-10">
                             {% for category_name, services in grouped_services.items %}
                             <div>
-                                <div class="flex items-center space-x-3 mb-5">
+                                <div class="flex flex-wrap items-center gap-2 mb-5">
                                     <span class="px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-[9px] font-black uppercase tracking-widest">
                                         {{ category_name }}
                                     </span>
                                     <div class="flex-1 h-px bg-slate-800/60"></div>
                                     <span class="text-slate-500 text-[10px] font-bold">{{ services|length }} service{{ services|length|pluralize }}</span>
                                 </div>
-                                <div class="grid sm:grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {% for item in services %}
                                     <div data-service-card-id="{{ item.id }}" class="group relative p-5 bg-slate-900/40 rounded-2xl border border-slate-800/60 hover:border-accent/30 transition-all duration-300 hover:bg-slate-900/60">
                                         <button type="button" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition" onclick="toggleSelectedService({{ item.id }})" aria-label="Remove service">
@@ -204,7 +204,7 @@
 
             <!-- ─── Left Roadmap Tracker (1 of 3 columns) ─── -->
             <div class="lg:col-span-1">
-                <div class="glass p-8 rounded-3xl border-slate-800 relative overflow-hidden h-full flex flex-col justify-between">
+                <div class="glass p-5 sm:p-8 rounded-3xl border-slate-800 relative overflow-hidden h-full flex flex-col justify-between mobile-card">
                     <!-- Ambient glow -->
                     <div class="absolute -bottom-12 -left-12 w-32 h-32 rounded-full bg-green-500/5 blur-3xl pointer-events-none"></div>
 
@@ -245,7 +245,7 @@
                                     </div>
                                 </div>
 
-                                <div class="flex-shrink-0 ml-2 milestone-action-container">
+                                <div class="flex-shrink-0 ml-0 sm:ml-2 milestone-action-container">
                                     {% if user.is_staff %}
                                     <!-- ── Admin Controls (3-state) ── -->
                                     <div class="flex items-center gap-1" id="admin-step-controls-{{ step.id }}">
