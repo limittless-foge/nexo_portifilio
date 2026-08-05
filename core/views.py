@@ -12,13 +12,16 @@ from django.db.models.functions import TruncDate
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from .models import Review, ContactMessage, Service, Project, SiteSetting, TeamMember, ServiceItem, ClientProfile, ClientActivityLog, ProjectCategory, PhoneNumber, ServiceCategory, RoadmapStep
+from .models import Review, ContactMessage, Service, Project, SiteSetting, TeamMember, ServiceItem, ClientProfile, ClientActivityLog, ProjectCategory, PhoneNumber, ServiceCategory, RoadmapStep, Experience, ExperienceCategory
 from .serializers import ClientAnalyticsSerializer
 from .forms import SiteSettingForm, ProjectForm
 
 def home(request):
     team_members = TeamMember.objects.all().order_by('order')
     categories = ServiceCategory.objects.all().prefetch_related('subservices').order_by('order')
+    services = Service.objects.all().order_by('order')
+    experiences = Experience.objects.select_related('category').all().order_by('-created_at')
+    experience_categories = ExperienceCategory.objects.all().order_by('order')
     fallback_categories = []
     selected_service_ids = []
 
@@ -166,9 +169,11 @@ def home(request):
             },
         ]
 
-    template_name = 'core/dashboard.html' if request.user.is_authenticated else 'core/landing.html'
     context = {
         'reviews': reviews,
+        'services': services,
+        'experiences': experiences,
+        'experience_categories': experience_categories,
         'projects': projects,
         'site_setting': site_setting,
         'team_members': team_members,
@@ -181,10 +186,6 @@ def home(request):
     }
 
     if request.user.is_authenticated and request.user.is_staff:
-        return render(request, template_name, context)
-
-    if request.user.is_authenticated:
-        context['services'] = Service.objects.all().order_by('order')
         return render(request, 'core/dashboard.html', context)
 
     return render(request, 'core/landing.html', context)
