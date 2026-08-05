@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{% block title %}WISDOM TOWER{% endblock %}</title>
     
     <meta name="description" content="WISDOM TOWER — Comprehensive Service Portfolio. Empowering your ideas with end-to-end digital, creative, and professional solutions.">
@@ -61,6 +61,49 @@
         }
     </script>
     <style>
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        img, svg, video, canvas {
+            display: block;
+            max-width: 100%;
+        }
+
+        a, button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .responsive-table {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .responsive-table table {
+            min-width: 720px;
+        }
+
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+        }
+
         .glass {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(12px);
@@ -172,6 +215,20 @@
         .rotate-90 {
             transform: rotate(90deg);
         }
+
+        @media (max-width: 767px) {
+            body {
+                overflow-x: hidden;
+            }
+
+            main {
+                width: 100%;
+            }
+
+            .mobile-stacked {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans">
@@ -201,6 +258,15 @@
         function toggleAdminDropdown() {
             const menu = document.getElementById('adminMenu');
             if (menu) menu.classList.toggle('hidden');
+        }
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileNavMenu');
+            const button = document.getElementById('mobileMenuButton');
+            if (menu && button) {
+                menu.classList.toggle('hidden');
+                const expanded = button.getAttribute('aria-expanded') === 'true';
+                button.setAttribute('aria-expanded', String(!expanded));
+            }
         }
 
         // Close dropdowns when clicking outside
