@@ -194,6 +194,8 @@ LOGOUT_REDIRECT_URL = '/'
 
 # Email Backend
 # Anymail Configuration for Brevo
+# Email Backend
+# Anymail Configuration for Brevo
 EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 
 ANYMAIL = {
@@ -201,7 +203,7 @@ ANYMAIL = {
 }
 
 # The email address users will see as the sender
-DEFAULT_FROM_EMAIL = "kalabadmase9@gmail.com" # Or your verified sender email in Brevo
+DEFAULT_FROM_EMAIL = "kalabadmase9@gmail.com"
 
 # Allauth Email Verification Settings
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
@@ -240,12 +242,3 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['user', 'repo', 'read:org'],
     }
 }
-
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'kalabadmase9@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'sjkrjninopsidcqj')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
