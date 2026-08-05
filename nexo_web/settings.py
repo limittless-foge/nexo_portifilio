@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'cloudinary',
     'django.contrib.sites',
+    'anymail',
 
     # Third party apps
     'allauth',
@@ -192,10 +193,15 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 # Email Backend
-EMAIL_BACKEND = os.environ.get(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
-)
+# Anymail Configuration for Brevo
+EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
+
+ANYMAIL = {
+    "BREVO_API_KEY": os.environ.get("BREVO_API_KEY"),
+}
+
+# The email address users will see as the sender
+DEFAULT_FROM_EMAIL = "kalabadmase9@gmail.com" # Or your verified sender email in Brevo
 
 # Allauth Email Verification Settings
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
@@ -235,7 +241,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-import os
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
