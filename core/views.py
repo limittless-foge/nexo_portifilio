@@ -402,11 +402,16 @@ def select_services(request):
     })
 
 
-@login_required
 @require_POST
 def toggle_service(request, service_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'status': 'unauthenticated',
+            'message': 'Please sign in or sign up to select services.'
+        }, status=401)
+
     service = get_object_or_404(ServiceItem, id=service_id)
-    
+
     client_id = request.GET.get('client_id') or request.POST.get('client_id')
     profile = None
     if client_id and request.user.is_staff:
